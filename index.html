@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Geocoding Service</title>
+  <style>
+    #map {
+      width: 100%;
+      height: calc(100vh - 100px);
+    }
+    #distance-result {
+      margin-top: 20px;
+    }
+    #end-address {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+
+  <label for="start">Adresse de départ:</label>
+  <div id="start-address" onclick="focusStartInput()"></div>
+  <input type="text" id="start" name="start">
+
+
+  <label for="end">Adresse de destination:</label>
+  <div id="end-address" onclick="expandAddress('end')"></div>
+  <input type="text" id="end" name="end">
+
+
+  <button onclick="calculateDistance()">Calculer la distance</button>
+
+
+  <div id="distance-result"></div>
+
+
+  <script>
+    var map;
+    var markers = [];
+    var addresses = [
+      // Ajoutez ici les adresses des centres
+      "103 Boulevard du val, Herouville-saint-clair 14200, France",//1
+      "130 rue du grand but lomme, Lille 59160, France",//2
+      "2 rue du faubourg des postes, Lille 59000, France",//3
+      "544 avenue Andres Ampere, Dammarie-les-lys 77190, France",//4
+      "Route National 3 Centre commercial les sentiers, Claye-souilly 77410, France",//5
+      "2 rue du General DE gaulle, Collegien 77090, France",//6
+      "33 Rue de Monthety, Pontault-Combault 77340, France",//7
+      "Avenue Gendarme Castermant, Chelles 77500, France",//8
+      "3 avenue Roland Moreno, Chauconin Neufmontiers 77124, France",//9
+      "Avenue Robert Schuman, Sartrouville 78500, France",//10
+      "2 Boulevard de l'europe 91000, Evry-courcouronnes 91000, France",//11
+      "28 Route de Grigny, Viry-Chatillon 91170, France",//12
+      "180 Avenue Francois Mitterrand, Athis-Mons 91200, France",//13
+      "Avenue de la Maison Neuve, Brétigny sur Orge 91220, France",//14
+      "4 Boulevard Gallieni, Villeneuve-la-Garenne 92390, France",//15
+      "21 rue louis calmel, Genevilliers 92230, France",//16
+      "16 Place du Marché, Neuilly sur seine 92200, France",//17
+      "20 routes des petits ponts Centre commercial beau Sevran 93270, France",//18
+      "Le Haut De Galy, Aulnay-sous-bois 93606, France",//19
+      "Avenue du General de Gaulle, Rosny-sous-Bois 93117, France",//20
+      "60 rue Saint-Stenay, Drancy 93700, France",//21
+      "5 avenue de Lattre de Tassigny, Epinay sur Seine 93800, France",//22
+      "1 place du caquet, Saint Denis 93200, France",//23
+      "85 Route de provins, Chennevieres-sur-Marne 94436, France",//24
+      "Avenue du marechal joffre, Fontenay-sous-bois 94120, France",//25
+      "67-69 avenue de Stalingrad, Villejuif 94800, France",//26
+      "75 avenue Aristide Briand, Arcueil 94110, France",//27
+      "55-69 avenues de Fontainebleau centre commercial kremlin-Bicetre 94270, France",//28
+      "chemins du poirier Charles Guerin, Osny 95520, France",//29
+      "boulevard de tilsit, L'Isle-Adam 95290, France",//30
+      "Route nationale 1, Moisselles 95570, France",//31
+      "1 Av. Jacques Anquetil, Goussainville 95190, France",//32
+      "66 boulevard victor bordier, Montigny les cormeilles 95370, France",//33
+      "362 Rue du General Leclerc, Franconville 95130, France",//34
+      "50 Avenue Robert Schuman, Saint-Brice-sous-Foret 95350, France",//35
+      "80 Avenue du Maine , Paris 75014, France",//36
+      "67-69 Avenue Paul Doumer, Paris 75016, France",//37
+      "11 Rue Bréa, Paris 75006, France",//38
+      "162 rue ordener, Paris 75018, France",//39
+      "17 Belsunce, Marseille 13001, France",//40
+      "Route de la Sablière D2, Marseille 13011, France",//41
+      "Route de Laghet, La Trinité 06340, France",//42
+      "Avenue de Bretagne 76100 Rouen, France",//43
+      "161 chemin departemental 78370 Plaisir",//44
+      "124 rue Lamarck 75018 Paris",//45
+      "186 avenue Jean Jaurès 93370 Montfermeil",//46
+      "18 rue de Stalingrad 95120 Ermont",//47
+      "70 avenue Charles de Gaulle 92350 Le Plessis-Robinson",//48
+      "16 rue de Saint-Cloud 92410 Ville d'Avray",//49
+      "10 Place Claire Lacombe 93120 La Courneuve",//50
+      "21 bis avenue Jean Jaurès 92140 Clamart",//51
+      "5 rue de l'Ouye 91410 Dourdan",//52
+      "9 avenue Montaigne 60000 Beauvais",//53
+      "22 rue Casimir Perier 76600 Le Havre",//54
+      "11 av st antoine 13464 Marseille",//55
+      "Avenue Prosper Merimee 13014 Marseille",//56
+    ];
+
+
+    var centerNames = [
+      // Ajoutez ici les noms des centres
+      "<B>We Audition Caen</B> 02-61539997 en face des caisse carrefour", //1
+      "<B>We Audition Lomme</B> 03-74099288 Centre commercial LOMME, en face des caisses de carrefour parking porte 2 a gauche",//2
+      "<B>We Audition Lillenium</B> 03-74099290 Centre Commercial LILENIUM- a cote darty et de la pharmacie parking au sous sol monter au 1er etage",//3
+      "<B>We Audition Dammarie</B> 01-85450888 Centre commercial Leclerc- Face aux caisses du Leclerc, magasin qui fait l'angle",//4
+      "<B>We Audition Claye Souilly</B> 01-85429997 Face aux caisses de Carrefour a cote du magasin Tresor magasin de bijou",//5
+      "<B>We Audition Bay2 Collegien</B> 01-85420343 Centre commercial Bay2, Porte 4 du centre commercial Bay 2 au niveau de Darty, en face de Grand Optical",//6
+      "<B>We Audition Pontault-combault</B> 01-85519997 A cote de la banque de carrefour et de la pharmacie",//7
+      "<B>We Audition Chelles</B> 01-85429994 A cote de histoire d'or colle au magasin (cordonnerie mystere minique) parking porte 5",//8
+      "<B>We Audition Meaux</B> 01-85490077 Centre commercial Aushopping Saisons de Meaux",//9
+      "<B>We Audition Sartrouville</B> 01-85399997 Face aux caisses de Carrefour",//10
+      "<B>We Audition Evry2</B> 01-84189997 Face aux caisses de Carrefour 1er etage",//11
+      "<B>We Audition Viry Chatillon</B> 01-85120555 Face aux caisses du Leclerc",//12
+      "<B>We Audition Athis-mons</B> 01-85129995 A cote de la station essence en face du dentiste derniere porte du centre commercial tout au fond",//13
+      "<B>We Audition Bretigny</B> 01-85460066",//14
+      "<B>We Audition Qwartz</B> 01-84201440 Centre Commercial QWARTZ, face caissses carrefour au rdc",//15
+      "<B>We Audition Gennevilliers</B> 01-84200992 Face a la Caisse prioritaire de Carrefour Attention Afflelou en face",//16
+      "<B>Audioreil Neully sur seine</B> 01-46374110 Sur la Place du marché parking souterain pour se garer",//17
+      "<B>We Audition Sevran</B> 01-43832740 Porte du cote du RER sevran Beudote, magasin qui fait l'angle face a General d'optique",//18
+      "<B>We Audition O'Parinor</B> 01-85109997 En face a la Croissanterie rdc",//19
+      "<B>We Audition Rosny2</B> 01-84219997 1er etage du centre a cote d'Etam",//20
+      "<B>We Audition Drancy</B> 01-84218074 Face caisses carrefour",//21
+      "<B>We Audition Epinay</B> 01-84218089 Centre commercial Aushopping L'ILO Epinay",//22
+      "<B>We Audition Saint Denis</B> 01-84219992 Centre commercial Basilique",//23
+      "<B>We Audition Pince-Vent</B> 01-85449997 En face de la croissanterie",//24
+      "<B>We Audition Val de Fontenay</B> 01-84239991 Porte ou il y a le Macdo parking aerient a cote",//25
+      "<B>We Audition Villejuif</B> 01-84233100 Face caisses Carrefour",//26
+      "<B>We Audition Arcueil</B> 01-84239994 En face de l'entree principal ou il y a la Pharmacie magasin qui fait l'angle",//27
+      "<B>We Audition Okabe</B> 01-46707167 Centre commercial Kremlin-Bicêtre Vers histoire d'or en face du Manège pour enfant",//28
+      "<B>We Audition OSNY</B> 01-30386133 Face aux caisse d'Auchan collé a la pharmacie",//29
+      "<B>We Audition L'Isle Adam</B> 01-85521855 Magasin en face de Nocibe",//30
+      "<B>We Audition Moisselles</B> 01-85522022 En face de La Croissanterie",//31
+      "<B>We Audition Goussainville</B> 01-85439997 Petit magasin, demander a Atol ou se trouve le magasin",//32
+      "<B>We Audition Montigny les cormeilles</B> 01-85119996 Au fond du centre en face a Krys",//33
+      "<B>We Audition Franconville</B> 01-85119992 Centre commercial Leclerc escalator du parking en face grand optical center",//34
+      "<B>We Audition Saint-Brice</B> 01-85430888 En face de carrefour a cote du restaurent thai pitaya",//35
+      "<B>We Audition Gaite Montparnasse</B> 01-83640022 Collé au Leclerc dans le centre les Atelier de Gaite",//36
+      "<B>We Audition Paris 16</B>  01-40727796 Seul We Audition a ne pas etre dans un centre",//37
+      "<B>A l'écoute Paris 6eme</B> 01-89675257 Metro Vavin (ligne 4), Magasin Pignon sur rue",//38
+      "<B>AUDITION MAX Paris 18eme</B> 01-88403555",//39
+      "<B>We Audition Marseille Bourse</B> 04-84899992 Centre commercial Bourse, au RDC, fond de la galerie",//40
+      "<B>We Audition Marseille La Valentine</B> 04-84899991 Centre Commerciale La Valentine en face des caisses du Geant Casino",//41
+      "<B>We Audition Nice La Trinité</B> 04-22138404 Centre commercial Auchan, 1er etage, a cote du centre dentaire Dentaigo. L'audio n'est la que le jeudi et le vendredi mais l'assistante est capable de faire les tests",//42
+      "<B>We Audition Rouen Atol</B> 02-78779995 Centre Commerciale Saint Severe rez de chaussé",//43
+      "<B>We Audition Plaisir</B> 01-85400203 centre commercial Aushopping Grand Plaisir",//44
+      "<B>Fréquence Audition Paris 18</B> 01-40250969",//45
+      "<B>Fréquence Audition Montfermeil</B> 01-48798427 dans le magasin KLARC'S OPTIQUE ET AUDITION",//46
+      "<B>Fréquence Audition Ermont</B> 01-34374592 boutique collée à Assu 2000",//47
+      "<B>Fréquence Audition Le Plessis-Robinson</B> 01-46329980 dans le magasin L'OPTICIEN",//48
+      "<B>Fréquence Audition Ville d'Avray</B> 01-46329980",//49
+      "<B>Fréquence Audition La Courneuve</B> 01-46329980 dans le magasin OPTICALI",//50
+      "<B>Fréquence Audition Clamart</B> 01-46329980 dans le magasin L'OPTICIEN",//51
+      "<B>Well Audition Dourdan</B> 01-64927994",//52
+      "<B>We Audition Beauvais</B> 03-65971050 centre commercial Carrefour, RDC",//53
+      "<B>We Audition Le Havre</B> 02-78930550 centre commercial Coty 2 eme étage- près des ascenceurs",//54
+      "<B>We Audition Marseille Grand Littoral</B> 04-84895808 centre commercial Grand Littoral, RDC à cote du Quick",//55
+      "<B>We Audition Marseille (Atol) Le merlan</B> 04-84899987 centre commercial Le Merlan RDC - A cote de la pharmacie",//56
+    ];
+
+
+    var audioprothetists = [
+      // Ajoutez ici les noms des audioprothésistes
+      "XXX",//1
+      "XXX",//2
+      "XXX",//3
+      "XXX",//4
+      "XXX",//5
+      "XXX",//6
+      "XXX",//7
+      "XXX",//8
+      "XXX",//9
+      "XXX",//10
+      "XXX",//11
+      "XXX",//12
+      "XXX",//13
+      "XXX",//14
+      "XXX",//15
+      "XXX",//16
+      "XXX",//17
+      "XXX",//18
+      "XXX",//19
+      "XXX",//20
+      "XXX",//21
+      "XXX",//22
+      "XXX",//23
+      "XXX",//24
+      "XXX",//25
+      "XXX",//26
+      "XXX",//27
+      "XXX",//28
+      "XXX",//29
+      "XXX",//30
+      "XXX",//31
+      "XXX",//32
+      "XXX",//33
+      "XXX",//34
+      "XXX",//35
+      "XXX",//36
+      "XXX",//37
+      "XXX",//38
+      "XXX",//39
+      "XXX",//40
+      "XXX",//41
+      "XXX",//42
+      "XXX",//43
+      "XXX",//44
+      "XXX",//45
+      "XXX",//46
+      "XXX",//47
+      "XXX",//48
+      "XXX",//49
+      "XXX",//50
+      "XXX",//51
+      "XXX",//52
+      "XXX",//53
+      "XXX",//54
+      "Kelly Halfon",//55
+      "XXX",//56
+
+
+    ];
+
+
+    var openingHours = [
+      // Ajoutez ici les horaires d'ouverture
+"Lundi au vendredi",//1
+"XXX",//2
+"XXX",//3
+"Lundi au vendredi",//4
+"Lundi au Jeudi",//5
+"Lundi au vendredi",//6
+"Lundi, Mardi, Mercredi",//7
+"Lundi au vendredi",//8
+"Mardi, Jeudi",//9
+"Lundi, Mardi",//10
+"Lundi au vendredi",//11
+"Lundi au vendredi",//12
+"Mercredi, Jeudi, Vendredi",//13
+"Lundi, Mardi",//14
+"XXX",//15
+"Lundi au vendredi",//16
+"Lundi au vendredi",//17
+"Lundi au vendredi",//18
+"XXX",//19
+"Lundi au vendredi Matin",//20
+"Lundi au vendredi",//21
+"Lundi au Mercredi",//22
+"Lundi au vendredi",//23
+"XXX",//24
+"Lundi au vendredi",//25
+"Lundi au vendredi",//26
+"Lundi au Jeudi",//27
+"XXX",//28
+"XXX",//29
+"XXX",//30
+"XXX",//31
+"XXX",//32
+"XXX",//33
+"XXX",//34
+"Lundi au vendredi",//35
+"XXX",//36
+"XXX",//37
+"Lundi au vendredi",//38
+"Lundi au vendredi",//39
+"Lundi au vendredi",//40
+"Lundi au vendredi",//41
+"XXX",//42
+"Lundi, Mardi",//43
+"Mercredi, Jeudi",//44
+"XXX",//45
+"XXX",//46
+"XXX",//47
+"XXX",//48
+"XXX",//49
+"XXX",//50
+"XXX",//51
+"XXX",//52
+"Lundi, Mardi, Mercredi",//53
+"Mercredi, Jeudi",//54
+"Lundi, Mardi, Mercredi",//55
+"Lundi, mardi, mercredi, jeudi",//56
+    ];
+
+
+    var centerImages = [
+  "https://lh3.googleusercontent.com/p/AF1QipOHwpAG4hxugw2pa95ojSqhVczGA8eF4JmvhS9r=s1360-w1360-h1020", // Centre 1 Caen
+  "https://lh3.googleusercontent.com/p/AF1QipNgqh0bDpdO48NQRjk90DxfobIr72zlUQ5Ppf53=s1360-w1360-h1020", // Centre 2 Lomme
+  "https://lh3.googleusercontent.com/p/AF1QipNtI66cF9r-oyMOWKDoJRbqQKy0_2jvYsZvVDCY=s1360-w1360-h1020", // Centre 3 Lilenium
+  "https://lh3.googleusercontent.com/p/AF1QipOt20avfSlEGWh73kq6sdNWkUqCLwoj6ou3bpkj=s1360-w1360-h1020", // Centre 4 Dammari
+  "https://lh3.googleusercontent.com/p/AF1QipMp2uG8getS9A59ec7uSF_eahFnJnOwOE7gbuTR=s1360-w1360-h1020", // Centre 5 Clay souilly
+  "https://lh3.googleusercontent.com/p/AF1QipMkO7zYmZdJY_OVPA9tKcRDyt00MLldWPsdRwrk=s1360-w1360-h1020", // Centre 6 Collegien
+  "https://lh3.googleusercontent.com/p/AF1QipMkO7zYmZdJY_OVPA9tKcRDyt00MLldWPsdRwrk=s1360-w1360-h1020", // Centre 7 Pontault-Combault
+  "https://lh3.googleusercontent.com/p/AF1QipNw3ABs-rFyYV-VvA4QJFSR9NKW4254VXRm-VTr=s1360-w1360-h1020", // Centre 8 Chelles
+  "https://lh3.googleusercontent.com/p/AF1QipN01vDkqb5A6rTAgU1iidan6z-hMNVJLRa0-MpT=s1360-w1360-h1020", // Centre 9 Meaux
+  "https://lh3.googleusercontent.com/p/AF1QipMXmui5EpDSIKLkmo8DnE9Tu0gj6nQfZsI6b4fx=s1360-w1360-h1020", // Centre 10 Sartrouville
+  "https://lh3.googleusercontent.com/p/AF1QipPc87BGRODgafo5UzBjkz9GR2xOT2XXncAKTgye=s1360-w1360-h1020", // Centre 11 Evry
+  "https://lh3.googleusercontent.com/p/AF1QipNhuf3i_eLKCoPgFKCY9BHRigpmR1rPClCNLCsi=s1360-w1360-h1020", // Centre 12 Viry Chatillon
+  "https://lh3.googleusercontent.com/p/AF1QipNiUkj2HsE5yia3QbFAQ4r6q7tCqtFho5VbLkQM=s1360-w1360-h1020", // Centre 13 Athis mons
+  "https://lh3.googleusercontent.com/p/AF1QipOYw-YYUqi5l7qfGF0VyqQHPumrNNLy_ItOXpXK=s1360-w1360-h1020", // Centre 14 Bretigny
+  "https://lh3.googleusercontent.com/p/AF1QipMokbE5B3OmJ3K69m5GYcm3OjZRtb1FEK4OxCmG=s1360-w1360-h1020", // Centre 15 Qwartz
+  "https://lh3.googleusercontent.com/p/AF1QipPx_QAl2uNMd3wty_XJSky0-Zceq801DwaWRR55=s1360-w1360-h1020", // Centre 16 Gennevillier
+  "https://lh3.googleusercontent.com/p/AF1QipPVgQKTtaV95C25_1xgBzpeZK8zu9D9V6KCLl9-=s680-w680-h510", // Centre 17 Neuilly sur seine
+  "https://lh3.googleusercontent.com/p/AF1QipPaueFcdvtG1m7yjgIcJ-XuELTKUpFGdvTkFshr=s1360-w1360-h1020", // Centre 18 Sevran
+  "https://lh3.googleusercontent.com/p/AF1QipO613-ZNwguMwuvhnTL2wy9FRcreuab2jw1q_V0=s1360-w1360-h1020", // Centre 19 O Parinor
+  "https://lh3.googleusercontent.com/p/AF1QipORvhp8qd7IahzYaSjotrHBVcApfxEaGd6vshZ9=s1360-w1360-h1020", // Centre 20 Rosny
+  "https://lh3.googleusercontent.com/p/AF1QipP0i_8VqU6C1Nv4lpOGqBltNHIY79xMy2YBpb4q=s1360-w1360-h1020", // Centre 21 Drancy
+  "https://lh3.googleusercontent.com/p/AF1QipM8mWKQ1i4a3Ou5PtkLU6F4jdWg9XnrNiK6lWbQ=s1360-w1360-h1020", // Centre 22 Epinay
+  "https://lh3.googleusercontent.com/p/AF1QipNvtTujrGyRwXya_NnoeAdmnv2z3Vh0EtaWO4kM=s1360-w1360-h1020", // Centre 23 Saint Denis
+
+
+  "https://lh3.googleusercontent.com/p/AF1QipMg73L6leHhjnCr53rGMsP01ZTV6ofcpxyP_aCQ=s1360-w1360-h1020", // Centre 25 Val de Fontenya
+  "", // Centre 26 Ville Juif
+  "https://lh3.googleusercontent.com/p/AF1QipMLi-mix4tM4GQCahuwvazlNtYe4_vxSaxNXVb8=s1360-w1360-h1020", // Centre 27 Arcueil
+  "https://lh3.googleusercontent.com/p/AF1QipPoTyDX8Wnd6wEoEuIFWIbpc26JI9Nlett_QF74=s1360-w1360-h1020", // Centre 28 Okabe
+  "https://lh3.googleusercontent.com/p/AF1QipMK647GvJk96dCIs3sTOvtWZpXihcpi-1e0OSHO=s1360-w1360-h1020", // Centre 29 Osny
+  "https://lh3.googleusercontent.com/p/AF1QipMuvECujxmtGtGA58kmLjF32i9hM4Y6--ZBS7L1=s1360-w1360-h1020", // Centre 30 L'\isle Adam
+  "https://lh3.googleusercontent.com/p/AF1QipM8CBqTxy5MwQPyS-L3CGiF4yJITKLrvlFhmgmd=s1360-w1360-h1020", // Centre 31 Moiselle
+  "https://www.we-audition.fr/wp-content/uploads/2022/02/f14e39a3-d713-439e-9219-7ac630e9fb8f.jpg", // Centre 32 Gousainville
+  "https://lh3.googleusercontent.com/p/AF1QipNgkq9x5CwhhnQsMAXQg_nb66XB6q5OoTQ0iHNh=s1360-w1360-h1020", // Centre 33 Montigny
+  "https://lh3.googleusercontent.com/p/AF1QipN0dLSBczwVtNinus8zNbQ891vMku2s24ALZHGp=s1360-w1360-h1020", // Centre 34 Franconville
+  "https://lh3.googleusercontent.com/p/AF1QipPlZcyfV49O8nde8gLLC1RjbLbxke20k-SsFel0=s1360-w1360-h1020", // Centre 35 Saint Brice
+  "https://lh3.googleusercontent.com/p/AF1QipOrelSoYI2gzCMAJNH7g7PQfyHK807ZC8zu73Ze=s1360-w1360-h1020", // Centre 36 Gaite Montparnasse
+  "https://lh3.googleusercontent.com/p/AF1QipOzvOWHnD6FsjmiH6gxsQ2yV7y136ogQAMny2qh=s1360-w1360-h1020", // Centre 37 Paris 16
+  "https://lh3.googleusercontent.com/p/AF1QipMV3NjAIgYU5H1JnTCpBCuW1M2rpV5AU_Y0cUIB=s1360-w1360-h1020", // Centre 38 A l'\ecoute
+  "https://images.squarespace-cdn.com/content/v1/63b800d30202b9332aa3113f/71fc9183-e81b-4d00-b27a-2518e048cc46/WhatsApp+Image+2023-01-09+at+12.48.58.jpeg", // Centre 39 Auditon Max
+  "https://lh3.googleusercontent.com/p/AF1QipPJMXMobUNZcLybB_K1nho7lAOH5hI7iZU4t1WC=s1360-w1360-h1020", // Centre 40 Marseille Bourse
+  "https://lh3.googleusercontent.com/p/AF1QipOdMMr2gt3JX0TnOg0iNAXHUkbZ2yFEnS9hohlI=s1360-w1360-h1020", // Centre 41 Marseilles La valentine
+  "https://lh3.googleusercontent.com/p/AF1QipOI3M9oJjQ9S9rgNJyA9G2h4zTiagCXq_8PBiy3=s1360-w1360-h1020", // Centre 42 Nice la Trinité
+  "", // Centre 43 Rouen
+  "", // Centre 44 Plaisir
+  "https://lh3.googleusercontent.com/p/AF1QipMrWAhsjILkXqBaRyApn49QwQK_HRjSp3vjgYAF=s1360-w1360-h1020", // Centre 45 Fréquence Audition Paris
+  "", // Centre 46 Fréquence Audition Montfermielle
+  "https://lh3.googleusercontent.com/p/AF1QipObms2aa8jid5epu7751xeRkEuIWFRpYk25s5pH=s1360-w1360-h1020", // Centre 47 Fréquence Audition Ermont
+  "https://lh3.googleusercontent.com/p/AF1QipOwDZmkQs6gQ4NPGK-reBqIZNQYl3dEeFaQfItM=s1360-w1360-h1020", // Centre 48 Fréquence Audition Le plessis Robinson
+  "", // Centre 49 Fréquence Audition Ville D'\Avray
+  "https://lh3.googleusercontent.com/p/AF1QipOlODwAu_IxWTbOOM4gxckGWlXM8JTCKlmZgJ1p=s1360-w1360-h1020", // Centre 50 Fréquence Audition La Courneuve
+  "https://lh3.googleusercontent.com/p/AF1QipNzKDXJtvuUhTTLPd0FqkspEe9Za98w1fx33LgV=s1360-w1360-h1020", // Centre 51 Fréquence Audition Clamart
+  "", // Centre 52 Fréquence Audition Dourdan
+  "https://lh3.googleusercontent.com/p/AF1QipNv1JnvVDh6fohYA6xJ3s3nZ4dSKhIg617nkmXV=s1360-w1360-h1020", // Centre 53 Beauvais
+  "https://lh3.googleusercontent.com/p/AF1QipP5t-5Ym_jiFqugagN4BBqR5L7wEHkOqytMouwj=s1360-w1360-h1020", // Centre 54 Le Havre
+  "", // Centre 55 Marseille Grand Littoral
+  "", // Centre 56 Marseille Le Merland
+
+
+
+
+
+
+    ];
+
+
+    // Nouvelles listes de centres avec pictogrammes rouges et jaunes
+    var redCenters = [
+      // Ajoutez ici les indices des centres à marquer en rouge
+      0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,39,40,41,42,43,52,53,54,55 // Centre 1
+    ];
+
+
+    var yellowCenters = [
+      // Ajoutez ici les indices des centres à marquer en jaune
+      16,37,38,44,45,46,47,48,49,50,51 // Centre 2
+    ];
+
+
+    function initMap() {
+      var center = { lat: 48.8566, lng: 2.3522 };
+      map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 12,
+        center: center
+      });
+
+
+      var geocoder = new google.maps.Geocoder();
+
+
+      addresses.forEach(function (address, index) {
+        geocoder.geocode({ address: address }, function (results, status) {
+          if (status === google.maps.GeocoderStatus.OK) {
+            var location = results[0].geometry.location;
+            var marker = new google.maps.Marker({
+              map: map,
+              position: location,
+              icon: getMarkerIcon(index) // Utilise la fonction getMarkerIcon pour définir l'icône du marqueur
+            });
+
+
+            var infoWindowContent =
+              '<strong>' + centerNames[index] + '</strong>' +
+              '<br><button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
+
+
+            var infoWindow = new google.maps.InfoWindow({
+              content: infoWindowContent
+            });
+
+
+            marker.addListener('click', function () {
+              var endAddressElement = document.getElementById('end-address');
+              endAddressElement.innerText = address;
+              document.getElementById('end').value = address;
+              endAddressElement.title = address;
+
+
+              infoWindow.open(map, marker);
+            });
+
+
+            markers.push(marker);
+          } else {
+            console.log("Erreur de géocodage pour l'adresse: " + address + ", statut: " + status);
+          }
+        });
+      });
+
+
+      // Autocomplétion de l'adresse de départ
+      var autocompleteStart = new google.maps.places.Autocomplete(document.getElementById('start'));
+      autocompleteStart.bindTo('bounds', map);
+
+
+      autocompleteStart.addListener('place_changed', function () {
+        var place = autocompleteStart.getPlace();
+        if (place.geometry) {
+          var marker = new google.maps.Marker({
+            map: map,
+            position: place.geometry.location,
+            icon: {
+              url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+            }
+          });
+          markers.push(marker);
+          moveToLocation(place.geometry.location.lat(), place.geometry.location.lng()); // Ajout de cette ligne pour déplacer la carte vers l'adresse de départ
+        }
+      });
+
+
+      // Pointer l'adresse de départ lors de la saisie
+      var startInput = document.getElementById('start');
+      startInput.addEventListener('input', function () {
+        var startAddressElement = document.getElementById('start-address');
+        startAddressElement.innerText = startInput.value;
+      });
+    }
+
+
+    function moveToLocation(latitude, longitude) {
+      var center = new google.maps.LatLng(latitude, longitude);
+      map.panTo(center);
+    }
+
+
+    function expandAddress(field) {
+      var addressElement = document.getElementById(field + '-address');
+      var inputElement = document.getElementById(field);
+      var fullAddress = addressElement.innerText;
+      if (addressElement.title === fullAddress) {
+        addressElement.innerText = fullAddress + ' ';
+        inputElement.style.width = 'auto';
+      } else {
+        addressElement.innerText = fullAddress;
+        inputElement.style.width = '';
+      }
+    }
+
+
+    function calculateDistance() {
+      var startAddress = document.getElementById('start').value;
+      var endAddress = document.getElementById('end').value;
+
+
+      var geocoder = new google.maps.Geocoder();
+
+
+      geocoder.geocode({ address: startAddress }, function (startResults, startStatus) {
+        if (startStatus === google.maps.GeocoderStatus.OK) {
+          var startLocation = startResults[0].geometry.location;
+
+
+          geocoder.geocode({ address:            endAddress
+          }, function (endResults, endStatus) {
+            if (endStatus === google.maps.GeocoderStatus.OK) {
+              var endLocation = endResults[0].geometry.location;
+
+
+              var distanceService = new google.maps.DistanceMatrixService();
+              distanceService.getDistanceMatrix({
+                origins: [startLocation],
+                destinations: [endLocation],
+                travelMode: 'DRIVING'
+              }, function (response, status) {
+                if (status === 'OK') {
+                  var distance = response.rows[0].elements[0].distance.text;
+                  var duration = response.rows[0].elements[0].duration.text;
+
+
+                  var resultElement = document.getElementById('distance-result');
+                  resultElement.innerHTML = 'Distance: ' + distance + '<br>' + 'Duration: ' + duration;
+
+
+                  // Affichage du trajet sur la carte
+                  var directionsService = new google.maps.DirectionsService();
+                  var directionsDisplay = new google.maps.DirectionsRenderer({
+                    map: map,
+                    polylineOptions: {
+                      strokeColor: 'blue'
+                    }
+                  });
+
+
+                  var request = {
+                    origin: startLocation,
+                    destination: endLocation,
+                    travelMode: 'DRIVING'
+                  };
+
+
+                  directionsService.route(request, function (result, status) {
+                    if (status === 'OK') {
+                      directionsDisplay.setDirections(result);
+                    } else {
+                      console.log('Erreur lors de l\'affichage du trajet: ' + status);
+                    }
+                  });
+                } else {
+                  console.log('Erreur de calcul de distance: ' + status);
+                }
+              });
+            } else {
+              console.log('Erreur de géocodage pour l\'adresse de destination: ' + endStatus);
+            }
+          });
+        } else {
+          console.log('Erreur de géocodage pour l\'adresse de départ: ' + startStatus);
+        }
+      });
+    }
+
+
+    function openDetailsPage(index) {
+      var centerName = centerNames[index];
+      var audioprothetist = audioprothetists[index];
+      var openingHour = openingHours[index];
+
+
+      var detailsPageContent =
+        '<h1>Détails du centre</h1>' +
+        '<p><strong>Présence Audioprothésiste:</strong> ' + openingHour + '</p>' +
+        '<h2>' + centerName + '</h2>' +
+        '<p><strong>Audioprothésiste:</strong> ' + audioprothetist + '</p>' +
+        '<img src="' + centerImages[index] + '" alt="Photo">';
+
+
+      var detailsWindow = window.open('', '_blank');
+      detailsWindow.document.write(detailsPageContent);
+      detailsWindow.document.close();
+    }
+
+
+    function getMarkerIcon(index) {
+      // Définir ici les index des centres avec un picto rouge
+      var redMarkers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,39,40,41,42,43,52,53,54,55];
+
+
+      // Définir ici les index des centres avec un picto jaune
+      var yellowMarkers = [16,37,38,44,45,46,47,48,49,50,51];
+
+
+      if (redMarkers.includes(index)) {
+        return 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+      } else if (yellowMarkers.includes(index)) {
+        return 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
+      } else {
+        return 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+      }
+    }
+</script>
+
+
+
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4Jwfw_OPQWziQPCuDnkVI699cR0Y5Lhc&callback=initMap&libraries=places" defer></script>
+</body>
+</html>
+
+
+
