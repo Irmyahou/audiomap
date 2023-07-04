@@ -1,51 +1,139 @@
 <!DOCTYPE html>
 <html>
+
+
 <head>
   <title>Geocoding Service</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+
     #map {
       width: 100%;
-      height: calc(100vh - 100px);
+      height: 90vh;
+      margin-bottom: 1em;
     }
-    #distance-result {
-      margin-top: 20px;
+
+
+    .form-control {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5em;
     }
-    #end-address {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+
+
+    .form-control label {
+      flex: 1;
+    }
+
+
+    .form-control input,
+    .form-control div {
+      flex: 2;
+      padding: 0.5em;
+    }
+
+
+    .bottom-section {
+      display: flex;
+      justify-content: space-between;
+    }
+
+
+    .bottom-section>div {
+      width: 48%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 1em;
+      box-sizing: border-box;
+    }
+
+
+    .bottom-section ul {
+      list-style: none;
+      padding: 0;
+    }
+
+
+    .bottom-section li {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+
+    button {
+      padding: 5px 10px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      margin: 4px 2px;
       cursor: pointer;
+      transition-duration: 0.4s;
     }
   </style>
 </head>
+
+
 <body>
   <div id="map"></div>
 
 
-  <label for="start">Adresse de départ:</label>
-  <div id="start-address" onclick="focusStartInput()"></div>
-  <input type="text" id="start" name="start">
 
 
-  <label for="end">Adresse de destination:</label>
-  <div id="end-address" onclick="expandAddress('end')"></div>
-  <input type="text" id="end" name="end">
 
 
-  <button onclick="calculateDistance()">Calculer la distance</button>
+  <div class="bottom-section">
+    <div>
+      <h3>Calcul des distances</h3>
+      <div class="form-control">
+        <label for="start">Adresse de depart:</label>
+        <input type="text" id="start" name="start">
+      </div>
 
 
-  <div id="distance-result"></div>
+      <div class="form-control">
+        <label for="end">Adresse de destination:</label>
+        <input type="text" id="end" name="end">
+      </div>
 
 
-  <script>
-    var map;
-    var markers = [];
-    var startMarker;
+      <div class="form-control">
+        <button onclick="calculateDistance()">Calculer la distance</button>
+      </div>
+      <div id="distance-result"></div>
+    </div>
 
 
-    var centers = [
-      {
+    <div>
+      <h3>Rendez-vous</h3>
+      <button onclick="changeDate(-1)">Precedent</button>
+      <input type="date" id="date" onchange="loadAppointments()">
+      <button onclick="changeDate(1)">Suivant</button>
+      <div id="appointments"></div>
+    </div>
+  </div>
+
+
+</body>
+
+
+</html>
+
+
+
+
+<script>
+  var map;
+  var markers = [];
+  var startMarker;
+
+
+  var centers = [
+  {
         address: "103 Boulevard du val, Herouville-saint-clair 14200, France",
         name: "<B>We Audition Caen</B> 02-61539997 en face des caisse carrefour",
         audioprothetist: "XXX",
@@ -478,7 +566,7 @@
         address: "161 chemin departemental 78370 Plaisir",//44
         name: "<B>We Audition Plaisir</B> 01-85400203 centre commercial Aushopping Grand Plaisir",//44
         audioprothetist: "XXX",
-        openingHours: "Mercredi et Jeudi",//44
+        openingHours: "Lundi, Mercredi et Jeudi",//44
         image: "",// Centre 44 Plaisir
         markerColor: "red"
       },
@@ -642,11 +730,12 @@
         image: "https://lh3.googleusercontent.com/p/AF1QipPFDD0CXjY0gvOS86LruxToCI8T6wjOJv-Fw_CY=s1360-w1360-h1020", // Centre 60 Noisy le sec
         markerColor: "blue"
       },
-     
-    ];
 
 
-    function geocodeStartAddress() {
+  ];
+
+
+  function geocodeStartAddress() {
     var startAddress = document.getElementById('start').value;
     var geocoder = new google.maps.Geocoder();
 
@@ -679,212 +768,380 @@
   }
 
 
-    function initMap() {
-      var center = { lat: 48.8566, lng: 2.3522 };
-      map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 12,
-        center: center
+  function initMap() {
+    var center = { lat: 48.8566, lng: 2.3522 };
+    map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 12,
+      center: center,
+      styles: [
+        {
+          featureType: 'poi',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    });
+    window.map = map;
+
+
+    var geocoder = new google.maps.Geocoder();
+
+
+    centers.forEach(function (center, index) {
+      geocoder.geocode({ address: center.address }, function (results, status) {
+        if (status === google.maps.GeocoderStatus.OK) {
+          var location = results[0].geometry.location;
+          var marker = new google.maps.Marker({
+            map: map,
+            position: location,
+            icon: getMarkerIcon(center)
+          });
+
+
+          var infoWindowContent =
+            '<strong>' + center.name + '</strong><br>' +
+            '<strong>Heures d\'ouverture:</strong> ' + center.openingHours + '<br>' +
+            '<strong>Adresse:</strong> ' + center.address + '<br>' +
+            '<strong>Audioprothésiste:</strong> ' + center.audioprothetist + '<br>' +
+            '<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
+            '<button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
+
+
+          var infoWindow = new google.maps.InfoWindow({
+            content: infoWindowContent
+          });
+
+
+          marker.addListener('click', function () {
+            document.getElementById('end').value = center.address;
+
+
+            infoWindow.open(map, marker);
+          });
+
+
+          markers.push(marker);
+        } else {
+          console.log("Erreur de géocodage pour l'adresse: " + center.address + ", statut: " + status);
+        }
       });
-
-
-      var geocoder = new google.maps.Geocoder();
-
-
-      centers.forEach(function (center, index) {
-        geocoder.geocode({ address: center.address }, function (results, status) {
-            if (status === google.maps.GeocoderStatus.OK) {
-                var location = results[0].geometry.location;
-                var marker = new google.maps.Marker({
-                    map: map,
-                    position: location,
-                    icon: getMarkerIcon(center)
-                });
-
-
-                var infoWindowContent =
-                    '<strong>' + center.name + '</strong><br>' +
-                    '<strong>Heures d\'ouverture:</strong> ' + center.openingHours + '<br>' +
-                    '<strong>Adresse:</strong> ' + center.address + '<br>' +
-                    '<strong>Audioprothésiste:</strong> ' + center.audioprothetist + '<br>' +
-                    '<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
-                    '<button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
-
-
-                var infoWindow = new google.maps.InfoWindow({
-                    content: infoWindowContent
-                });
-
-
-                marker.addListener('click', function () {
-                    var endAddressElement = document.getElementById('end-address');
-                    endAddressElement.innerText = center.address;
-                    document.getElementById('end').value = center.address;
-                    endAddressElement.title = center.address;
-
-
-                    infoWindow.open(map, marker);
-                });
-
-
-                markers.push(marker);
-            } else {
-                console.log("Erreur de géocodage pour l'adresse: " + center.address + ", statut: " + status);
-            }
-        });
     });
 
 
-      var autocompleteStart = new google.maps.places.Autocomplete(
-        document.getElementById('start'),
-        { types: ['geocode'] }
-      );
+    var autocompleteStart = new google.maps.places.Autocomplete(
+      document.getElementById('start'),
+      { types: ['geocode'] }
+    );
 
 
-      autocompleteStart.setFields(['address_component']);
+    autocompleteStart.setFields(['address_component']);
+  }
+
+
+  function getMarkerIcon(center) {
+    switch (center.markerColor) {
+      case "red":
+        return 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+      case "yellow":
+        return 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
+      default:
+        return 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
     }
+  }
 
 
-    function getMarkerIcon(center) {
-      switch(center.markerColor) {
-        case "red":
-          return 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
-        case "yellow":
-          return 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
-        default:
-          return 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
-      }
-    }
+  function calculateDistance() {
+    // Votre fonction de calcul de distance ici
+    var startAddress = document.getElementById('start').value;
+    var endAddress = document.getElementById('end').value;
 
 
-    function calculateDistance() {
-      // Votre fonction de calcul de distance ici
-      var startAddress = document.getElementById('start').value;
-      var endAddress = document.getElementById('end').value;
+    var geocoder = new google.maps.Geocoder();
 
 
-      var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: startAddress }, function (startResults, startStatus) {
+      if (startStatus === google.maps.GeocoderStatus.OK) {
+        var startLocation = startResults[0].geometry.location;
 
 
-      geocoder.geocode({ address: startAddress }, function (startResults, startStatus) {
-        if (startStatus === google.maps.GeocoderStatus.OK) {
-          var startLocation = startResults[0].geometry.location;
+        geocoder.geocode({
+          address: endAddress
+        }, function (endResults, endStatus) {
+          if (endStatus === google.maps.GeocoderStatus.OK) {
+            var endLocation = endResults[0].geometry.location;
 
 
-          geocoder.geocode({ address:            endAddress
-          }, function (endResults, endStatus) {
-            if (endStatus === google.maps.GeocoderStatus.OK) {
-              var endLocation = endResults[0].geometry.location;
+            var distanceService = new google.maps.DistanceMatrixService();
+            distanceService.getDistanceMatrix({
+              origins: [startLocation],
+              destinations: [endLocation],
+              travelMode: 'DRIVING'
+            }, function (response, status) {
+              if (status === 'OK') {
+                var distance = response.rows[0].elements[0].distance.text;
+                var duration = response.rows[0].elements[0].duration.text;
 
 
-              var distanceService = new google.maps.DistanceMatrixService();
-              distanceService.getDistanceMatrix({
-                origins: [startLocation],
-                destinations: [endLocation],
-                travelMode: 'DRIVING'
-              }, function (response, status) {
-                if (status === 'OK') {
-                  var distance = response.rows[0].elements[0].distance.text;
-                  var duration = response.rows[0].elements[0].duration.text;
+                var resultElement = document.getElementById('distance-result');
+                resultElement.innerHTML = 'Distance: ' + distance + '<br>' + 'Duration: ' + duration;
 
 
-                  var resultElement = document.getElementById('distance-result');
-                  resultElement.innerHTML = 'Distance: ' + distance + '<br>' + 'Duration: ' + duration;
+                // Affichage du trajet sur la carte
+                var directionsService = new google.maps.DirectionsService();
+                var directionsDisplay = new google.maps.DirectionsRenderer({
+                  map: map,
+                  polylineOptions: {
+                    strokeColor: 'blue'
+                  }
+                });
 
 
-                  // Affichage du trajet sur la carte
-                  var directionsService = new google.maps.DirectionsService();
-                  var directionsDisplay = new google.maps.DirectionsRenderer({
-                    map: map,
-                    polylineOptions: {
-                      strokeColor: 'blue'
-                    }
-                  });
+                var request = {
+                  origin: startLocation,
+                  destination: endLocation,
+                  travelMode: 'DRIVING'
+                };
 
 
-                  var request = {
-                    origin: startLocation,
-                    destination: endLocation,
-                    travelMode: 'DRIVING'
-                  };
-
-
-                  directionsService.route(request, function (result, status) {
-                    if (status === 'OK') {
-                      directionsDisplay.setDirections(result);
-                    } else {
-                      console.log('Erreur lors de l\'affichage du trajet: ' + status);
-                    }
-                  });
-                } else {
-                  console.log('Erreur de calcul de distance: ' + status);
-                }
-              });
-            } else {
-              console.log('Erreur de géocodage pour l\'adresse de destination: ' + endStatus);
-            }
-          });
-        } else {
-          console.log('Erreur de géocodage pour l\'adresse de départ: ' + startStatus);
-        }
-      });
-    }
-   
-
-
-    function openDetailsPage(centerIndex) {
-      var center = centers[centerIndex];
-
-
-var detailsPageContent =
-    '<h1>Détails du centre</h1>' +
-    '<h2>' + center.name + '</h2>' +
-    '<p><strong>Adresse:</strong> ' + center.address + '</p>' +
-    '<p><strong>Heures d\'ouverture:</strong> ' + center.openingHours + '</p>' +
-    '<p><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
-    '<img src="' + center.image + '" alt="Photo">';
-
-
-var detailsWindow = window.open('', '_blank');
-detailsWindow.document.write(detailsPageContent);
-detailsWindow.document.close();
-}
-   
-
-
-    function expandAddress(inputId) {
-      // Votre fonction pour développer l'adresse ici
-      var addressElement = document.getElementById(field + '-address');
-      var inputElement = document.getElementById(field);
-      var fullAddress = addressElement.innerText;
-      if (addressElement.title === fullAddress) {
-        addressElement.innerText = fullAddress + ' ';
-        inputElement.style.width = 'auto';
+                directionsService.route(request, function (result, status) {
+                  if (status === 'OK') {
+                    directionsDisplay.setDirections(result);
+                  } else {
+                    console.log('Erreur lors de l\'affichage du trajet: ' + status);
+                  }
+                });
+              } else {
+                console.log('Erreur de calcul de distance: ' + status);
+              }
+            });
+          } else {
+            console.log('Erreur de géocodage pour l\'adresse de destination: ' + endStatus);
+          }
+        });
       } else {
-        addressElement.innerText = fullAddress;
-        inputElement.style.width = '';
+        console.log('Erreur de géocodage pour l\'adresse de départ: ' + startStatus);
       }
+    });
+  }
+
+
+
+
+  function openDetailsPage(centerIndex) {
+    var center = centers[centerIndex];
+
+
+    var detailsPageContent =
+      '<h1>Détails du centre</h1>' +
+      '<h2>' + center.name + '</h2>' +
+      '<p><strong>Adresse:</strong> ' + center.address + '</p>' +
+      '<p><strong>Heures d\'ouverture:</strong> ' + center.openingHours + '</p>' +
+      '<p><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
+      '<img src="' + center.image + '" alt="Photo">';
+
+
+    var detailsWindow = window.open('', '_blank');
+    detailsWindow.document.write(detailsPageContent);
+    detailsWindow.document.close();
+  }
+
+
+
+
+  function expandAddress(inputId) {
+    // Votre fonction pour développer l'adresse ici
+    var addressElement = document.getElementById(field + '-address');
+    var inputElement = document.getElementById(field);
+    var fullAddress = addressElement.innerText;
+    if (addressElement.title === fullAddress) {
+      addressElement.innerText = fullAddress + ' ';
+      inputElement.style.width = 'auto';
+    } else {
+      addressElement.innerText = fullAddress;
+      inputElement.style.width = '';
     }
-     
-   
-
-
-    function focusStartInput() {
-      // Votre fonction pour se concentrer sur l'entrée du départ ici
-  var startInput = document.getElementById('start');
-  startInput.focus();
-}
-document.getElementById('start').addEventListener('change', geocodeStartAddress);
+  }
 
 
 
 
-  </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4Jwfw_OPQWziQPCuDnkVI699cR0Y5Lhc&callback=initMap&libraries=places"
+
+
+  function focusStartInput() {
+    // Votre fonction pour se concentrer sur l'entrée du départ ici
+    var startInput = document.getElementById('start');
+    startInput.focus();
+  }
+  document.getElementById('start').addEventListener('change', geocodeStartAddress);
+
+
+
+
+</script>
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4Jwfw_OPQWziQPCuDnkVI699cR0Y5Lhc&callback=initMap&libraries=places"
   async defer></script>
-</body>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script>
+  function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
+    let date = new Date();
+    setDate(date);
+  }
+
+
+  function initializeGapiClient() {
+    return gapi.client.init({
+      'apiKey': "AIzaSyBLx2sI2_nIAlAfQ10FKaq8s_2Zd7EhQVw",
+      'clientId': "513516336164-5o81eom8k8s03lgsrj0gd4mp6auuu4d9.apps.googleusercontent.com",
+      'scope': 'https://www.googleapis.com/auth/calendar.readonly',
+      'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+    }).then(loadAppointments);
+  }
+
+
+  //Format date to Paris UTC
+  function setDate(date) {
+    let formattedDate = date.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+    let parts = formattedDate.split('/');
+    let outputDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Remap to yyyy-mm-dd
+    document.getElementById('date').value = outputDate;
+  }
+
+
+  //On user click next or previous date
+  function changeDate(change) {
+    const dateInput = document.getElementById('date');
+    let date = new Date(dateInput.value);
+    date.setDate(date.getDate() + change);
+    dateInput.value = date.toISOString().split('T')[0];
+    loadAppointments();
+  }
+
+
+  function loadAppointments() {
+    const date = document.getElementById('date').value;
+    getDayAppointments(date).then(function (items) {
+      let appointments = '<ul>';
+      items.forEach(function (appointment) {
+        appointments += `
+            <li>
+                <strong>${appointment.summary}</strong>:
+                ${appointment.start.dateTime} - ${appointment.end.dateTime}
+            </li>
+                            `;
+      });
+      appointments += '</ul>';
+      document.getElementById('appointments').innerHTML = appointments;
+    });
+  }
+
+
+
+
+  async function getDayAppointments(date) {
+    clearPreviousMarkers();
+
+
+    let startDate = getStartDate(date);
+    let endDate = getEndDate(date);
+
+
+    return gapi.client.calendar.events.list({
+      'calendarId': 'weaudition.adom@gmail.com',
+      'timeMin': startDate.toISOString(),
+      'timeMax': endDate.toISOString(),
+      'showDeleted': false,
+      'singleEvents': true,
+      'orderBy': 'startTime',
+    }).then(function (response) {
+      return response.result.items.map(function (appointment) {
+        updateAppointmentDateTime(appointment);
+        if (appointment.location) {
+          addAppointmentMarker(appointment);
+        }
+        return appointment;
+      });
+    });
+  }
+
+
+  function clearPreviousMarkers() {
+    if (window.eventMarkers) {
+      window.eventMarkers.forEach(function (marker) {
+        marker.setMap(null);
+      });
+    } else {
+      window.eventMarkers = [];
+    }
+  }
+
+
+  function getStartDate(date) {
+    let startDate = new Date(date);
+    const offset = startDate.getTimezoneOffset() + 1 * 60; // Add 2 hours for French timezone (UTC+2)
+    return new Date(startDate.getTime() + offset * 60 * 1000);
+  }
+
+
+  function getEndDate(date) {
+    let endDate = new Date(date);
+    const offset = endDate.getTimezoneOffset() + 1 * 60; // Add 2 hours for French timezone (UTC+2)
+    endDate = new Date(endDate.getTime() + (offset + 1) * 60 * 1000);
+    endDate.setDate(endDate.getDate() + 1);
+    return endDate;
+  }
+
+
+  function updateAppointmentDateTime(appointment) {
+    // Convert time to french ones
+    let start = new Date(appointment.start.dateTime);
+    let end = new Date(appointment.end.dateTime);
+    appointment.start.dateTime = start.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+    appointment.end.dateTime = end.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+  }
+
+
+  function addAppointmentMarker(appointment) {
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: appointment.location }, function (results, status) {
+      if (status === 'OK') {
+        var marker = new google.maps.Marker({
+          map: window.map,
+          position: results[0].geometry.location,
+          icon: 'http://maps.google.com/mapfiles/ms/icons/grn-pushpin.png' // Icône bleue
+        });
+        window.eventMarkers.push(marker);
+        addMarkerListener(marker, appointment);
+      } else {
+        console.log('Geocode was not successful for the following reason: ' + status);
+      }
+    });
+  }
+
+
+  function addMarkerListener(marker, appointment) {
+    var infoWindowContent =
+      '<strong>' + appointment.summary + '</strong><br>' +
+      '<strong>Start:</strong> ' + appointment.start.dateTime + '<br>' +
+      '<strong>End:</strong> ' + appointment.end.dateTime + '<br>' +
+      '<strong>Location:</strong> ' + appointment.location;
+
+
+    var infoWindow = new google.maps.InfoWindow({
+      content: infoWindowContent
+    });
+
+
+    marker.addListener('click', function () {
+      infoWindow.open(map, marker);
+    });
+  }
+
+
+
+
+</script>
+
+
 </html>
-
-
-
-
 
