@@ -145,9 +145,24 @@
     const response = await fetch("https://asia-south1-mentorwise-384110.cloudfunctions.net/zoho-retriever");
     return response.json();
   }
+  function mapAccountData(source) {
+    return {
+      name: source.Account_Name,
+      address: `${source.Rue}, ${source.Code_postal} ${source.Ville}`,
+      address_complement: source.Compl_ment_d_adresse,
+      audioprothetist: source.Owner.name,
+      openingHours: source.Date_pr_sence_Audio ? source.Date_pr_sence_Audio.replace(',', '').replace(/"/g, '') : "",
+      image: source.URL_Image_Centre,
+      phone: source.Phone,
+      markerColor: source.Couleur_Picto,
+      ...source
+    };
+  }
+
   async function initMap() {
     const data = await fetchAllAccounts();
-    const centers = data.accounts;
+    const centers = data.accounts.filter(center => center.Maison_m_re === false).map(mapAccountData);
+    window.centers = centers;
 
     var center = { lat: 48.8566, lng: 2.3522 };
     map = new google.maps.Map(document.getElementById('map'), {
@@ -176,8 +191,9 @@
 
           var infoWindowContent =
             '<strong>' + center.name + '</strong><br>' +
-            '<strong>Heures d\'ouverture:</strong> ' + center.openingHours + '<br>' +
+            '<strong>Heures d\'ouverture:</strong> ' + center.openingHours.replace(',', '').replace(/"/g, '') + '<br>' +
             '<strong>Adresse:</strong> ' + center.address + '<br>' +
+            "<strong>Complément d'adresse:</strong> " + center.address_complement + '<br>' +
             '<strong>Audioprothésiste:</strong> ' + center.audioprothetist + '<br>' +
             '<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
             '<button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
@@ -208,13 +224,26 @@
   }
 
   function getMarkerIcon(center) {
-    switch (center.markerColor) {
+    markerColor = center.markerColor ? center.markerColor.toLowerCase() : "yellow"
+    switch (markerColor) {
       case "red":
         return 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
       case "yellow":
         return 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
+      case "blue":
+        return 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+      case "green":
+        return 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+      case "ltblue":
+        return 'https://maps.google.com/mapfiles/ms/icons/ltblue-dot.png'
+      case "orange":
+        return 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png'
+      case "pink":
+        return 'https://maps.google.com/mapfiles/ms/icons/pink-dot.png'
+      case "purple":
+        return 'https://maps.google.com/mapfiles/ms/icons/purple-dot.png'
       default:
-        return 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+        return 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png';
     }
   }
 
@@ -286,13 +315,14 @@
 
 
   function openDetailsPage(centerIndex) {
-    var center = centers[centerIndex];
+    var center = window.centers[centerIndex];
 
     var detailsPageContent =
       '<h1>Détails du centre</h1>' +
       '<h2>' + center.name + '</h2>' +
       '<p><strong>Adresse:</strong> ' + center.address + '</p>' +
-      '<p><strong>Heures d\'ouverture:</strong> ' + center.openingHours + '</p>' +
+      "<p><strong>Complément d'adresse:</strong> " + center.address_complement + '</p>' +
+      '<p><strong>Heures d\'ouverture:</strong> ' + center.openingHours.replace(',', '').replace(/"/g, '') + '</p>' +
       '<p><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
       '<img src="' + center.image + '" alt="Photo">';
 
@@ -343,6 +373,7 @@
       'apiKey': "AIzaSyBLx2sI2_nIAlAfQ10FKaq8s_2Zd7EhQVw",
       'clientId': "513516336164-5o81eom8k8s03lgsrj0gd4mp6auuu4d9.apps.googleusercontent.com",
       'scope': 'https://www.googleapis.com/auth/calendar.readonly',
+      'cookiePolicy': 'single_host_origin',
       'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
     }).then(loadAppointments);
   }
