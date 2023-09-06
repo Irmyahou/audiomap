@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 
-
 <head>
   <title>Geocoding Service</title>
   <style>
@@ -9,13 +8,11 @@
       font-family: Arial, sans-serif;
     }
 
-
     #map {
       width: 100%;
-      height: 90vh;
+      height: 70vh;
       margin-bottom: 1em;
     }
-
 
     .form-control {
       display: flex;
@@ -23,11 +20,9 @@
       margin-bottom: 0.5em;
     }
 
-
     .form-control label {
       flex: 1;
     }
-
 
     .form-control input,
     .form-control div {
@@ -35,12 +30,10 @@
       padding: 0.5em;
     }
 
-
     .bottom-section {
       display: flex;
       justify-content: space-between;
     }
-
 
     .bottom-section>div {
       width: 48%;
@@ -50,12 +43,10 @@
       box-sizing: border-box;
     }
 
-
     .bottom-section ul {
       list-style: none;
       padding: 0;
     }
-
 
     .bottom-section li {
       margin-bottom: 10px;
@@ -63,7 +54,6 @@
       border: 1px solid #ddd;
       border-radius: 5px;
     }
-
 
     button {
       padding: 5px 10px;
@@ -77,12 +67,8 @@
   </style>
 </head>
 
-
 <body>
   <div id="map"></div>
-
-
-
 
 
 
@@ -94,19 +80,16 @@
         <input type="text" id="start" name="start">
       </div>
 
-
       <div class="form-control">
         <label for="end">Adresse de destination:</label>
         <input type="text" id="end" name="end">
       </div>
-
 
       <div class="form-control">
         <button onclick="calculateDistance()">Calculer la distance</button>
       </div>
       <div id="distance-result"></div>
     </div>
-
 
     <div>
       <h3>Rendez-vous</h3>
@@ -117,700 +100,23 @@
     </div>
   </div>
 
-
 </body>
-
 
 </html>
 
 
-
-
 <script>
+
+
+
   var map;
   var markers = [];
   var startMarker;
 
 
-  var centers = [
-  {
-        address: "103 Boulevard du val, Herouville-saint-clair 14200, France",
-        name: "<B>We Audition Caen</B> 02-61539997 en face des caisse carrefour",
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipOHwpAG4hxugw2pa95ojSqhVczGA8eF4JmvhS9r=s1360-w1360-h1020",
-        markerColor: "red"
-      },
-     
-      {
-        address: "130 rue du grand but lomme, Lille 59160, France",
-        name: "<B>We Audition Lomme</B> 03-74099288 Centre commercial LOMME, en face des caisses de carrefour parking porte 2 a gauche",
-        audioprothetist: "XXX",
-        openingHours: "XXX",
-        image: "https://lh3.googleusercontent.com/p/AF1QipNgqh0bDpdO48NQRjk90DxfobIr72zlUQ5Ppf53=s1360-w1360-h1020",
-        markerColor: "red"
-      },
-
-
-      {
-        address: "2 rue du faubourg des postes, Lille 59000, France",
-        name: "<B>We Audition Lillenium</B> 03-74099290 Centre Commercial LILENIUM- a cote darty et de la pharmacie parking au sous sol monter au 1er etage",
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipNtI66cF9r-oyMOWKDoJRbqQKy0_2jvYsZvVDCY=s1360-w1360-h1020",
-        markerColor: "red"
-      },
-
-
-      {
-        address: "544 avenue Andres Ampere, Dammarie-les-lys 77190, France", // Centre 4 Dammary
-        name: "<B>We Audition Dammarie</B> 01-85450888 Centre commercial Leclerc- Face aux caisses du Leclerc, magasin qui fait l'angle", // Centre 4 Dammary
-        audioprothetist: "XXX", // Centre 4 Dammary
-        openingHours: "Lundi au vendredi", // Centre 4 Dammary
-        image: "https://lh3.googleusercontent.com/p/AF1QipOt20avfSlEGWh73kq6sdNWkUqCLwoj6ou3bpkj=s1360-w1360-h1020", // Centre 4 Dammary
-        markerColor: "red" // Centre 4 Dammary
-      },
-
-
-      {
-        address: "Route National 3 Centre commercial les sentiers, Claye-souilly 77410, France",//5
-        name: "<B>We Audition Claye Souilly</B> 01-85429997 Face aux caisses de Carrefour a cote du magasin Tresor magasin de bijoux",// Centre 5 Clay souilly
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Jeudi",//5 Clay souilly
-        image: "https://lh3.googleusercontent.com/p/AF1QipMp2uG8getS9A59ec7uSF_eahFnJnOwOE7gbuTR=s1360-w1360-h1020", // Centre 5 Clay souilly
-        markerColor: "red"
-      },
-
-
-      {
-        address: "2 rue du General DE gaulle, Collegien 77090, France",//Centre 6 Collegien
-        name: "<B>We Audition Bay2 Collegien</B> 01-85420343 Centre commercial Bay2, Porte 4 du centre commercial Bay 2 au niveau de Darty, en face de Grand Optical",//Centre 6 Collegien
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//Centre 6 Collegien
-        image: "https://lh3.googleusercontent.com/p/AF1QipMkO7zYmZdJY_OVPA9tKcRDyt00MLldWPsdRwrk=s1360-w1360-h1020", // Centre 6 Collegien
-        markerColor: "red"
-      },
-
-
-      {
-        address: "33 Rue de Monthety, Pontault-Combault 77340, France",//Centre 7 Pontault-Combault
-        name: "<B>We Audition Pontault-combault</B> 01-85519997 A cote de la banque de carrefour et de la pharmacie",//Centre 7 Pontault-Combault
-        audioprothetist: "XXX",
-        openingHours: "Lundi, Mardi, Mercredi",//Centre 7 Pontault-Combault
-        image: "https://lh3.googleusercontent.com/p/AF1QipMkO7zYmZdJY_OVPA9tKcRDyt00MLldWPsdRwrk=s1360-w1360-h1020", //Centre 7 Pontault-Combault
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue Gendarme Castermant, Chelles 77500, France",//8
-        name: "<B>We Audition Chelles</B> 01-85429994 A cote de histoire d'or colle au magasin (cordonnerie mystere minique) parking porte 5",//8
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//8
-        image: "https://lh3.googleusercontent.com/p/AF1QipNw3ABs-rFyYV-VvA4QJFSR9NKW4254VXRm-VTr=s1360-w1360-h1020", //Centre 8 Chelles
-        markerColor: "red"
-      },
-
-
-      {
-        address: "3 avenue Roland Moreno, Chauconin Neufmontiers 77124, France",//9
-        name: "<B>We Audition Meaux</B> 01-85490077 Centre commercial Aushopping Saisons de Meaux",//9
-        audioprothetist: "XXX",
-        openingHours: "Mardi et Jeudi",//9
-        image: "https://lh3.googleusercontent.com/p/AF1QipN01vDkqb5A6rTAgU1iidan6z-hMNVJLRa0-MpT=s1360-w1360-h1020", //Centre 9 Meaux
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue Robert Schuman, Sartrouville 78500, France",//10
-        name: "<B>We Audition Sartrouville</B> 01-85399997 Face aux caisses de Carrefour",//10
-        audioprothetist: "XXX",
-        openingHours: "Lundi et Mardi",//10
-        image: "https://lh3.googleusercontent.com/p/AF1QipMXmui5EpDSIKLkmo8DnE9Tu0gj6nQfZsI6b4fx=s1360-w1360-h1020", //Centre 10 Sartrouville
-        markerColor: "red"
-      },
-
-
-      {
-        address: "2 Boulevard de l'europe 91000, Evry-courcouronnes 91000, France",//11
-        name: "<B>We Audition Evry2</B> 01-84189997 Face aux caisses de Carrefour 1er etage",//11
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//11
-        image: "https://lh3.googleusercontent.com/p/AF1QipPc87BGRODgafo5UzBjkz9GR2xOT2XXncAKTgye=s1360-w1360-h1020", //Centre 11 Evry
-        markerColor: "red"
-      },
-
-
-      {
-        address: "28 Route de Grigny, Viry-Chatillon 91170, France",//12
-        name: "<B>We Audition Viry Chatillon</B> 01-85120555 Face aux caisses du Leclerc",//12
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipNhuf3i_eLKCoPgFKCY9BHRigpmR1rPClCNLCsi=s1360-w1360-h1020", // Centre 12 Viry Chatillon
-        markerColor: "red"
-      },
-
-
-      {
-        address: "180 Avenue Francois Mitterrand, Athis-Mons 91200, France",//13
-        name: "<B>We Audition Athis-mons</B> 01-85129995 A cote de la station essence en face du dentiste derniere porte du centre commercial tout au fond",//13
-        audioprothetist: "XXX",
-        openingHours: "Mercredi, Jeudi et Vendredi",//13
-        image: "https://lh3.googleusercontent.com/p/AF1QipNiUkj2HsE5yia3QbFAQ4r6q7tCqtFho5VbLkQM=s1360-w1360-h1020", // Centre 13 Athis mons
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue de la Maison Neuve, Brétigny sur Orge 91220, France",//14
-        name: "<B>We Audition Bretigny</B> 01-85460066 Centre commercial Aushopping face à Auchan a cote du Flunch",//14
-        audioprothetist: "XXX",
-        openingHours: "Lundi et Mardi",//14
-        image: "https://lh3.googleusercontent.com/p/AF1QipOYw-YYUqi5l7qfGF0VyqQHPumrNNLy_ItOXpXK=s1360-w1360-h1020", // Centre 14 Bretigny
-        markerColor: "red"
-      },
-
-
-      {
-        address: "4 Boulevard Gallieni, Villeneuve-la-Garenne 92390, France",//15
-        name: "<B>We Audition Qwartz</B> 01-84201440 Centre Commercial QWARTZ, face caissses carrefour au rdc",//15
-        audioprothetist: "XXX",
-        openingHours: "XXX",
-        image: "https://lh3.googleusercontent.com/p/AF1QipMokbE5B3OmJ3K69m5GYcm3OjZRtb1FEK4OxCmG=s1360-w1360-h1020", // Centre 15 Qwartz
-        markerColor: "red"
-      },
-
-
-      {
-        address: "21 rue louis calmel, Genevilliers 92230, France",//16
-        name: "<B>We Audition Gennevilliers</B> 01-84200992 Face a la Caisse prioritaire de Carrefour Attention Afflelou en face",//16
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipPx_QAl2uNMd3wty_XJSky0-Zceq801DwaWRR55=s1360-w1360-h1020", // Centre 16 Gennevillier
-        markerColor: "red"
-      },
-
-
-      {
-        address: "16 Place du Marché, Neuilly sur seine 92200, France",//17
-        name: "<B>Audioreil Neully sur seine</B> 01-46374110 Sur la Place du marché parking souterain pour se garer",//17
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image:  "https://lh3.googleusercontent.com/p/AF1QipPVgQKTtaV95C25_1xgBzpeZK8zu9D9V6KCLl9-=s680-w680-h510", // Centre 17 Neuilly sur seine
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "20 routes des petits ponts Centre commercial beau Sevran 93270, France",//18
-        name: "<B>We Audition Sevran</B> 01-43832740 Porte du cote du RER sevran Beudote, magasin qui fait l'angle face a General d'optique",//18
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipPaueFcdvtG1m7yjgIcJ-XuELTKUpFGdvTkFshr=s1360-w1360-h1020", // Centre 18 Sevran
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Le Haut De Galy, Aulnay-sous-bois 93606, France",//19
-        name: "<B>We Audition O'Parinor</B> 01-85109997 En face a la Croissanterie rdc",//19
-        audioprothetist: "XXX",
-        openingHours: "XXX",
-        image: "https://lh3.googleusercontent.com/p/AF1QipO613-ZNwguMwuvhnTL2wy9FRcreuab2jw1q_V0=s1360-w1360-h1020", // Centre 19 O Parinor
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue du General de Gaulle, Rosny-sous-Bois 93117, France",//20
-        name: "<B>We Audition Rosny2</B> 01-84219997 1er etage du centre à coté d'Etam",//20
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi matin",
-        image: "https://lh3.googleusercontent.com/p/AF1QipORvhp8qd7IahzYaSjotrHBVcApfxEaGd6vshZ9=s1360-w1360-h1020", // Centre 20 Rosny
-        markerColor: "red"
-      },
-
-
-      {
-        address: "60 rue Saint-Stenay, Drancy 93700, France",//21
-        name: "<B>We Audition Drancy</B> 01-84218074 Face caisses carrefour",//21
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",
-        image: "https://lh3.googleusercontent.com/p/AF1QipP0i_8VqU6C1Nv4lpOGqBltNHIY79xMy2YBpb4q=s1360-w1360-h1020", // Centre 21 Drancy
-        markerColor: "red"
-      },
-
-
-      {
-        address: "5 avenue de Lattre de Tassigny, Epinay sur Seine 93800, France",//22
-        name: "<B>We Audition Epinay</B> 01-84218089 Centre commercial Aushopping L'ILO Epinay",//22
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Mercredi",//22
-        image: "https://lh3.googleusercontent.com/p/AF1QipM8mWKQ1i4a3Ou5PtkLU6F4jdWg9XnrNiK6lWbQ=s1360-w1360-h1020", // Centre 22 Epinay
-        markerColor: "red"
-      },
-
-
-      {
-        address: "5 passage des arbaletriers, Saint Denis 93200, France",//23
-        name: "<B>We Audition Saint Denis</B> 01-84219992 Centre commercial Basilique",//23
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//23
-        image: "https://lh3.googleusercontent.com/p/AF1QipNvtTujrGyRwXya_NnoeAdmnv2z3Vh0EtaWO4kM=s1360-w1360-h1020", // Centre 23 Saint Denis
-        markerColor: "red"
-      },
-
-
-      {
-        address: "85 Route de provins, Chennevieres-sur-Marne 94436, France",//24
-        name: "<B>We Audition Pince-Vent</B> 01-85449997 En face de la croissanterie",//24
-        audioprothetist: "XXX",
-        openingHours: "XXX",//24
-        image: "https://lh3.googleusercontent.com/p/AF1QipN7mu_ym_JMBe84Ea0oilADufTy4WQLqxsA0pY2=s1360-w1360-h1020", // Centre 24 Chennevieres
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue du marechal joffre, Fontenay-sous-bois 94120, France",//25
-        name: "<B>We Audition Val de Fontenay</B> 01-84239991 Porte ou il y a le Macdo parking aerient a cote",//25
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//25
-        image: "https://lh3.googleusercontent.com/p/AF1QipMg73L6leHhjnCr53rGMsP01ZTV6ofcpxyP_aCQ=s1360-w1360-h1020", // Centre 25 Val de Fontenya
-        markerColor: "red"
-      },
-
-
-      {
-        address: "67-69 avenue de Stalingrad, Villejuif 94800, France",//26
-        name: "<B>We Audition Villejuif</B> 01-84233100 Face caisses Carrefour",//26
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//26
-        image: "https://media.doctolib.com/image/upload/q_auto:eco,f_auto,w_1024,h_700,c_limit/gyeqolsxexnvdarlnxay.jpg",// Centre 26 Ville juif
-        markerColor: "red"
-      },
-
-
-      {
-        address: "75 avenue Aristide Briand, Arcueil 94110, France",//27
-        name: "<B>We Audition Arcueil</B> 01-84239994 En face de l'entree principal ou il y a la Pharmacie magasin qui fait l'angle",//27
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Jeudi",//27
-        image: "https://lh3.googleusercontent.com/p/AF1QipMLi-mix4tM4GQCahuwvazlNtYe4_vxSaxNXVb8=s1360-w1360-h1020", // Centre 27 Arcueil
-        markerColor: "red"
-      },
-
-
-      {
-        address: "55-69 avenues de Fontainebleau centre commercial kremlin-Bicetre 94270, France",//28
-        name: "<B>We Audition Okabe</B> 01-46707167 Centre commercial Kremlin-Bicêtre Vers histoire d'or en face du Manège pour enfant",//28
-        audioprothetist: "XXX",
-        openingHours: "XXX",//28
-        image: "https://lh3.googleusercontent.com/p/AF1QipPoTyDX8Wnd6wEoEuIFWIbpc26JI9Nlett_QF74=s1360-w1360-h1020", // Centre 28 Okabe
-        markerColor: "red"
-      },
-
-
-      {
-        address: "chemins du poirier Charles Guerin, Osny 95520, France",//29
-        name: "<B>We Audition OSNY</B> 01-30386133 Face aux caisse d'Auchan collé a la pharmacie",//29
-        audioprothetist: "XXX",
-        openingHours: "XXX",//29
-        image: "https://lh3.googleusercontent.com/p/AF1QipMK647GvJk96dCIs3sTOvtWZpXihcpi-1e0OSHO=s1360-w1360-h1020", // Centre 29 Osny
-        markerColor: "red"
-      },
-
-
-      {
-        address: "boulevard de tilsit, L'Isle-Adam 95290, France",//30
-        name: "<B>We Audition L'Isle Adam</B> 01-85521855 Magasin en face de Nocibe",//30
-        audioprothetist: "XXX",
-        openingHours: "XXX",//30
-        image: "https://lh3.googleusercontent.com/p/AF1QipMuvECujxmtGtGA58kmLjF32i9hM4Y6--ZBS7L1=s1360-w1360-h1020", // Centre 30 L'\isle Adam
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Route nationale 1, Moisselles 95570, France",//31
-        name: "<B>We Audition Moisselles</B> 01-85522022 En face de La Croissanterie",//31
-        audioprothetist: "XXX",
-        openingHours: "XXX",//31
-        image: "https://lh3.googleusercontent.com/p/AF1QipM8CBqTxy5MwQPyS-L3CGiF4yJITKLrvlFhmgmd=s1360-w1360-h1020", // Centre 31 Moiselle
-        markerColor: "red"
-      },
-
-
-      {
-        address: "1 Av. Jacques Anquetil, Goussainville 95190, France",//32
-        name: "<B>We Audition Goussainville</B> 01-85439997 Petit magasin, demander a Atol ou se trouve le magasin",//32
-        audioprothetist: "XXX",
-        openingHours: "XXX",//32
-        image: "https://www.we-audition.fr/wp-content/uploads/2022/02/f14e39a3-d713-439e-9219-7ac630e9fb8f.jpg", // Centre 32 Gousainville
-        markerColor: "red"
-      },
-
-
-      {
-        address: "66 boulevard victor bordier, Montigny les cormeilles 95370, France",//33
-        name: "<B>We Audition Montigny les cormeilles</B> 01-85119996 Au fond du centre en face a Krys",//33
-        audioprothetist: "XXX",
-        openingHours: "XXX",//33
-        image: "https://lh3.googleusercontent.com/p/AF1QipNgkq9x5CwhhnQsMAXQg_nb66XB6q5OoTQ0iHNh=s1360-w1360-h1020", // Centre 33 Montigny
-        markerColor: "red"
-      },
-
-
-      {
-        address: "362 Rue du General Leclerc, Franconville 95130, France",//34
-        name: "<B>We Audition Franconville</B> 01-85119992 Centre commercial Leclerc escalator du parking en face grand optical center",//34
-        audioprothetist: "XXX",
-        openingHours: "XXX",//34
-        image: "https://lh3.googleusercontent.com/p/AF1QipN0dLSBczwVtNinus8zNbQ891vMku2s24ALZHGp=s1360-w1360-h1020", // Centre 34 Franconville
-        markerColor: "red"
-      },
-
-
-      {
-        address: "50 Avenue Robert Schuman, Saint-Brice-sous-Foret 95350, France",//35
-        name: "<B>We Audition Saint-Brice</B> 01-85430888 En face de carrefour a cote du restaurent thai pitaya",//35
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//35
-        image: "https://lh3.googleusercontent.com/p/AF1QipPlZcyfV49O8nde8gLLC1RjbLbxke20k-SsFel0=s1360-w1360-h1020", //Centre 35 Saint Brice
-        markerColor: "red"
-      },
-
-
-      {
-        address: "80 Avenue du Maine , Paris 75014, France",//36
-        name: "<B>We Audition Gaite Montparnasse</B> 01-83640022 Collé au Leclerc dans le centre les Atelier de Gaite",//36
-        audioprothetist: "XXX",
-        openingHours: "XXX",//36
-        image: "https://lh3.googleusercontent.com/p/AF1QipOrelSoYI2gzCMAJNH7g7PQfyHK807ZC8zu73Ze=s1360-w1360-h1020", // Centre 36 Gaite Montparnasse
-        markerColor: "red"
-      },
-
-
-      {
-        address: "67-69 Avenue Paul Doumer, Paris 75016, France",//37
-        name: "<B>We Audition Paris 16</B>  01-40727796 Seul We Audition a ne pas etre dans un centre",//37
-        audioprothetist: "XXX",
-        openingHours: "XXX",//37
-        image: "https://lh3.googleusercontent.com/p/AF1QipOzvOWHnD6FsjmiH6gxsQ2yV7y136ogQAMny2qh=s1360-w1360-h1020", // Centre 37 Paris 16
-        markerColor: "red"
-      },
-
-
-      {
-        address: "11 Rue Bréa, Paris 75006, France",//38
-        name: "<B>A l'écoute Paris 6e</B> 01-89675257 Metro Vavin (ligne 4), Magasin Pignon sur rue",//38
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//38
-        image: "https://lh3.googleusercontent.com/p/AF1QipMV3NjAIgYU5H1JnTCpBCuW1M2rpV5AU_Y0cUIB=s1360-w1360-h1020", // Centre 38 A l'\ecoute
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "162 rue ordener, Paris 75018, France",//39
-        name: "<B>AUDITION MAX Paris 18eme</B> 01-88403555",//39
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//39
-        image:   "https://images.squarespace-cdn.com/content/v1/63b800d30202b9332aa3113f/71fc9183-e81b-4d00-b27a-2518e048cc46/WhatsApp+Image+2023-01-09+at+12.48.58.jpeg", // Centre 39 Auditon Max
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "17 Belsunce, Marseille 13001, France",//40
-        name: "<B>We Audition Marseille Bourse</B> 04-84899992 Centre commercial Bourse, au RDC, fond de la galerie",//40
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//40
-        image: "https://lh3.googleusercontent.com/p/AF1QipPJMXMobUNZcLybB_K1nho7lAOH5hI7iZU4t1WC=s1360-w1360-h1020", // Centre 40 Marseille Bourse
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Route de la Sablière D2, Marseille 13011, France",//41
-        name: "<B>We Audition Marseille La Valentine</B> 04-84899991 Centre Commerciale La Valentine en face des caisses du Geant Casino",//41
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//41
-        image:  "https://lh3.googleusercontent.com/p/AF1QipOdMMr2gt3JX0TnOg0iNAXHUkbZ2yFEnS9hohlI=s1360-w1360-h1020", // Centre 41 Marseilles La valentine
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Route de Laghet, La Trinité 06340, France",//42
-        name: "<B>We Audition Nice La Trinité</B> 04-22138404 Centre commercial Auchan, 1er etage, a cote du centre dentaire Dentaigo. Assistante est capable de faire les tests",//42
-        audioprothetist: "XXX",
-        openingHours: "Jeudi et Vendredi",//42
-        image: "https://lh3.googleusercontent.com/p/AF1QipOI3M9oJjQ9S9rgNJyA9G2h4zTiagCXq_8PBiy3=s1360-w1360-h1020", // Centre 42 Nice la Trinité
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue de Bretagne 76100 Rouen, France",//43
-        name: "<B>We Audition Rouen Atol</B> 02-78779995 Centre Commerciale Saint Severe rez de chaussé",//43
-        audioprothetist: "XXX",
-        openingHours: "Lundi et Mardi",//43
-        image: "",// Centre 43 Rouen
-        markerColor: "red"
-      },
-
-
-      {
-        address: "161 chemin departemental 78370 Plaisir",//44
-        name: "<B>We Audition Plaisir</B> 01-85400203 centre commercial Aushopping Grand Plaisir",//44
-        audioprothetist: "XXX",
-        openingHours: "Lundi, Mercredi et Jeudi",//44
-        image: "",// Centre 44 Plaisir
-        markerColor: "red"
-      },
-
-
-      {
-        address: "124 rue Lamarck 75018 Paris",//45 centre Frequence Paris 18
-        name: "<B>Fréquence Audition Paris 18</B> 01-40250969",//45 centre Frequence Paris 18
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi", //45 centre Frequence Paris 18
-        image: "https://lh3.googleusercontent.com/p/AF1QipMrWAhsjILkXqBaRyApn49QwQK_HRjSp3vjgYAF=s1360-w1360-h1020",//45 centre Frequence Paris 18
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "186 avenue Jean Jaurès 93370 Montfermeil",//46
-        name: "<B>Fréquence Audition Montfermeil</B> 01-48798427 dans le magasin KLARC'S OPTIQUE ET AUDITION",//46
-        audioprothetist: "XXX",
-        openingHours: "Lundi et vendredi", //46
-        image: "", // Centre 46 Fréquence Audition Montfermielle
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "18 rue de Stalingrad 95120 Ermont",//47
-        name: "<B>Fréquence Audition Ermont</B> 01-34374592 boutique collée à Assu 2000",//47
-        audioprothetist: "XXX",
-        openingHours: "Lundi au vendredi",//47
-        image: "https://lh3.googleusercontent.com/p/AF1QipObms2aa8jid5epu7751xeRkEuIWFRpYk25s5pH=s1360-w1360-h1020", // Centre 47 Fréquence Audition Ermont
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "70 avenue Charles de Gaulle 92350 Le Plessis-Robinson",//48
-        name: "<B>Fréquence Audition Le Plessis-Robinson</B> 01-46329980 dans le magasin L'OPTICIEN",//48
-        audioprothetist: "XXX",
-        openingHours: "Mardi et Jeudi",//48
-        image: "https://lh3.googleusercontent.com/p/AF1QipOwDZmkQs6gQ4NPGK-reBqIZNQYl3dEeFaQfItM=s1360-w1360-h1020", // Centre 48 Fréquence Audition Le plessis Robinson
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "16 rue de Saint-Cloud 92410 Ville d'Avray",//49
-        name: "<B>Fréquence Audition Ville d'Avray</B> 01-46329980",//49
-        audioprothetist: "XXX",
-        openingHours: "Mercredi",//49
-        image: "", // Centre 49 Fréquence Audition Ville D'\Avray
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "10 Place Claire Lacombe 93120 La Courneuve",//50
-        name: "<B>Fréquence Audition La Courneuve</B> 01-46329980 dans le magasin OPTICALI",//50
-        audioprothetist: "XXX",
-        openingHours: "Mardi et Jeudi",//50
-        image: "https://lh3.googleusercontent.com/p/AF1QipOlODwAu_IxWTbOOM4gxckGWlXM8JTCKlmZgJ1p=s1360-w1360-h1020", // Centre 50 Fréquence Audition La Courneuve
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "21 bis avenue Jean Jaurès 92140 Clamart",//51
-        name: "<B>Fréquence Audition Clamart</B> 01-46329980 dans le magasin L'OPTICIEN",//51
-        audioprothetist: "XXX",
-        openingHours: "Jeudi",//51
-        image: "https://lh3.googleusercontent.com/p/AF1QipNzKDXJtvuUhTTLPd0FqkspEe9Za98w1fx33LgV=s1360-w1360-h1020", // Centre 51 Fréquence Audition Clamart
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "5 rue de l'Ouye 91410 Dourdan",//52
-        name: "<B>Well Audition Dourdan</B> 01-64927994",//52
-        audioprothetist: "XXX",
-        openingHours: "Vendredi pour l'instant mais bien a plein temps",//52
-        image: "", // Centre 52 Well Audition Dourdan
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "9 avenue Montaigne 60000 Beauvais",//53
-        name: "<B>We Audition Beauvais</B> 03-65971050 centre commercial Carrefour, RDC",//53
-        audioprothetist: "XXX",
-        openingHours: "Lundi, Mardi et Mercredi",//53
-        image: "https://lh3.googleusercontent.com/p/AF1QipNv1JnvVDh6fohYA6xJ3s3nZ4dSKhIg617nkmXV=s1360-w1360-h1020", // Centre 53 Beauvais
-        markerColor: "red"
-      },
-
-
-      {
-        address: "22 rue Casimir Perier 76600 Le Havre",//54
-        name: "<B>We Audition Le Havre</B> 02-78930550 centre commercial Coty 2 eme étage- près des ascenceurs",//54
-        audioprothetist: "XXX",
-        openingHours: "Mercredi et Jeudi",//54
-        image: "https://lh3.googleusercontent.com/p/AF1QipP5t-5Ym_jiFqugagN4BBqR5L7wEHkOqytMouwj=s1360-w1360-h1020", // Centre 54 Le Havre
-        markerColor: "red"
-      },
-
-
-      {
-        address: "11 av st antoine 13464 Marseille",//55
-        name: "<B>We Audition Marseille Grand Littoral</B> 04-84895808 centre commercial Grand Littoral, RDC à cote du Quick",//55
-        audioprothetist: "XXX",
-        openingHours: "Lundi, Mardi et Mercredi",//55
-        image: "", // Centre 55 Marseille Grand Littoral
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue Prosper Merimee 13014 Marseille",//56
-        name: "<B>We Audition Marseille (Atol) Le merlan</B> 04-84899987 centre commercial Le Merlan RDC - A cote de la pharmacie",//56
-        audioprothetist: "XXX",
-        openingHours: "Lundi, mardi, mercredi et jeudi",//56
-        image: "", // Centre 56 Marseille Le Merland
-        markerColor: "red"
-      },
-
-
-      {
-        address: "136 cours Emile Zola 69100 Villeurbanne",//57
-        name: "<B>Mon Audio Concept</B> 04-77272705 Centre pignon sur rue",//57
-        audioprothetist: "Noam Amsellem",
-        openingHours: "Lundi au Vendredi",//57
-        image: "https://lh3.googleusercontent.com/p/AF1QipMvAtd9xi6jb4Z_k0e1HU0L18jwyWdPICitp6s2=s680-w680-h510", // Centre 57 Villeurbanne
-        markerColor: "yellow"
-      },
-
-
-      {
-        address: "59 Rue du Général de Gaulle, 94350 Villiers-sur-Marne, France",//58
-        name: "<B>InOuïe Audition - Villiers-sur-Marne</B> 01-57109212 Centre pignon sur rue",//58
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Vendredi",//58
-        image: "https://lh3.googleusercontent.com/p/AF1QipPRVsis8iCNg2RaBqymQF-io9M_B_Pp4dsr2dI8=s680-w680-h510", // Centre 58 Villiers sur marne
-        markerColor: "blue"
-      },
-
-
-      {
-        address: "42 Avenue Jean Lolive, 93500 Pantin, France",//59
-        name: "<B>Inouie Audition - Audioprothésiste Pantin</B> 01-80892830 Centre pignon sur rue",//59
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Vendredi",//59
-        image: "https://lh3.googleusercontent.com/p/AF1QipOGM9a30YAgMhmhqmFMYwrbPNkhDMYFdOHi5Cmo=s680-w680-h510", // Centre 59 Pantin
-        markerColor: "blue"
-      },
-
-
-      {
-        address: "75 Rue Jean Jaurès, 93130 Noisy-le-Sec, France",//60
-        name: "<B>InOuïe Audition - Audioprothésiste Noisy Le Sec</B> 01-48442717 Centre pignon sur rue",//60
-        audioprothetist: "XXX",
-        openingHours: "Lundi au Vendredi",//60
-        image: "https://lh3.googleusercontent.com/p/AF1QipPFDD0CXjY0gvOS86LruxToCI8T6wjOJv-Fw_CY=s1360-w1360-h1020", // Centre 60 Noisy le sec
-        markerColor: "blue"
-      },
-
-
-      {
-        address: "201 rue du General de Gaulle, 95370 Montigny les cormeilles, France",//61
-        name: "<B>L'ouïe D'or</B> 01-88609081 100M de la gare RER montigny, Beauchamp",//61
-        audioprothetist: "Benjamin Perrin Spécialisé dans les acouphènes",
-        openingHours: "Lundi, Mardi et Mercredi",//61
-        image: "https://lh3.googleusercontent.com/p/AF1QipO6GtMaAR-L7wY9QIIJlIKubBmWJDKeWRUZeYcj=s680-w680-h510", // Centre Montigny les cormeilles
-        markerColor: "blue"
-      },
-
-
-      {
-        address: "Zac saint Ladre Rue Botticelli, 80080 Amiens, France",//62
-        name: "<B>We Audition Amiens</B> 03-65895040 Centre commercial Carrefour Amiens-RDC Entre Atol et Histoire d'Or",//62
-        audioprothetist: "XXX",
-        openingHours: "Jeudi",//62
-        image: "https://lh3.googleusercontent.com/p/AF1QipPvb6DzQf4CAi99aQz8DxcFWUsdITgtO9qEMgyn=s1360-w1360-h1020", // Centre Amiens
-        markerColor: "red"
-      },
-
-
-      {
-        address: "1001 Boulevard du Kent, 62231 Coquelles, France",//63
-        name: "<B>We Audition Coquelles</B> 03-74969989 Centre commercial Cité Europe-1 er etage-porte 1",//63
-        audioprothetist: "XXX",
-        openingHours: "XXX",//63
-        image: "https://lh3.googleusercontent.com/p/AF1QipPvb6DzQf4CAi99aQz8DxcFWUsdITgtO9qEMgyn=s1360-w1360-h1020", // Centre Coquelles
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Avenue Georges Guynemer, 62100 Calais, France",//64
-        name: "<B>We audition Mivoix</B>  03-74960288 Centre commercial Carrrefour Mivoix a cote de la Pharmacie",//64
-        audioprothetist: "XXX",
-        openingHours: "XXX",//64
-        image: "https://lh3.googleusercontent.com/p/AF1QipPvb6DzQf4CAi99aQz8DxcFWUsdITgtO9qEMgyn=s1360-w1360-h1020", // Centre Calais
-        markerColor: "red"
-      },
-
-
-      {
-        address: "16 rue de Cernay, 51100 Reims, France",//65
-        name: "<B>We audition Reims Cernay</B> 03-52740960 Centre Commercial Carrefour Reims Cernay RDC",//65
-        audioprothetist: "XXX",
-        openingHours: "XXX",//65
-        image: "https://lh3.googleusercontent.com/p/AF1QipPi4NXh6jHXJfNVOKnIkX33BLc70dAnrRpGPM1D=s1360-w1360-h1020", // Centre Reims Cernay
-        markerColor: "red"
-      },
-
-
-      {
-        address: "Route de soissons, 51430 Tinqueux, France",//66
-        name: "<B>We audition Reims Tinqueux</B> 03-52740950 Centre commercial Carrefour Reims Tinqueux",//66
-        audioprothetist: "XXX",
-        openingHours: "XXX",//66
-        image: "https://lh3.googleusercontent.com/p/AF1QipMIf4uMo-YPexUiGuyQdMf4A_RPRZThh0-UkS1R=s1360-w1360-h1020", // Centre Reims Tinqueux
-        markerColor: "red"
-      },
-
-
-      {
-        address: "N10, 78120 Rambouillet, France",//67
-        name: "<B>We audition Rambouillet</B> 01-85770011 Centre commercial Bel Air- Porte Greneau",//67
-        audioprothetist: "XXX",
-        openingHours: "XXX",//67
-        image: "https://lh3.googleusercontent.com/p/AF1QipMIf4uMo-YPexUiGuyQdMf4A_RPRZThh0-UkS1R=s1360-w1360-h1020", // Centre Rambouillet
-        markerColor: "red"
-      },
-
-
-
-
-  ];
-
-
   function geocodeStartAddress() {
     var startAddress = document.getElementById('start').value;
     var geocoder = new google.maps.Geocoder();
-
 
     geocoder.geocode({ address: startAddress }, function (results, status) {
       if (status === google.maps.GeocoderStatus.OK) {
@@ -819,9 +125,7 @@
           startMarker.setMap(null);
         }
 
-
         var location = results[0].geometry.location;
-
 
         // Ajouter un nouveau marqueur avec un picot vert
         startMarker = new google.maps.Marker({
@@ -830,7 +134,6 @@
           icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
         });
 
-
         // Déplace la carte pour qu'elle soit centrée sur le nouveau marqueur
         map.setCenter(location);
       } else {
@@ -838,9 +141,14 @@
       }
     });
   }
+  async function fetchAllAccounts() {
+    const response = await fetch("https://asia-south1-mentorwise-384110.cloudfunctions.net/zoho-retriever");
+    return response.json();
+  }
+  async function initMap() {
+    const data = await fetchAllAccounts();
+    const centers = data.accounts;
 
-
-  function initMap() {
     var center = { lat: 48.8566, lng: 2.3522 };
     map = new google.maps.Map(document.getElementById('map'), {
       zoom: 12,
@@ -854,9 +162,7 @@
     });
     window.map = map;
 
-
     var geocoder = new google.maps.Geocoder();
-
 
     centers.forEach(function (center, index) {
       geocoder.geocode({ address: center.address }, function (results, status) {
@@ -868,7 +174,6 @@
             icon: getMarkerIcon(center)
           });
 
-
           var infoWindowContent =
             '<strong>' + center.name + '</strong><br>' +
             '<strong>Heures d\'ouverture:</strong> ' + center.openingHours + '<br>' +
@@ -877,19 +182,15 @@
             '<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
             '<button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
 
-
           var infoWindow = new google.maps.InfoWindow({
             content: infoWindowContent
           });
 
-
           marker.addListener('click', function () {
             document.getElementById('end').value = center.address;
 
-
             infoWindow.open(map, marker);
           });
-
 
           markers.push(marker);
         } else {
@@ -898,16 +199,13 @@
       });
     });
 
-
     var autocompleteStart = new google.maps.places.Autocomplete(
       document.getElementById('start'),
       { types: ['geocode'] }
     );
 
-
     autocompleteStart.setFields(['address_component']);
   }
-
 
   function getMarkerIcon(center) {
     switch (center.markerColor) {
@@ -920,27 +218,22 @@
     }
   }
 
-
   function calculateDistance() {
     // Votre fonction de calcul de distance ici
     var startAddress = document.getElementById('start').value;
     var endAddress = document.getElementById('end').value;
 
-
     var geocoder = new google.maps.Geocoder();
-
 
     geocoder.geocode({ address: startAddress }, function (startResults, startStatus) {
       if (startStatus === google.maps.GeocoderStatus.OK) {
         var startLocation = startResults[0].geometry.location;
-
 
         geocoder.geocode({
           address: endAddress
         }, function (endResults, endStatus) {
           if (endStatus === google.maps.GeocoderStatus.OK) {
             var endLocation = endResults[0].geometry.location;
-
 
             var distanceService = new google.maps.DistanceMatrixService();
             distanceService.getDistanceMatrix({
@@ -952,10 +245,8 @@
                 var distance = response.rows[0].elements[0].distance.text;
                 var duration = response.rows[0].elements[0].duration.text;
 
-
                 var resultElement = document.getElementById('distance-result');
                 resultElement.innerHTML = 'Distance: ' + distance + '<br>' + 'Duration: ' + duration;
-
 
                 // Affichage du trajet sur la carte
                 var directionsService = new google.maps.DirectionsService();
@@ -966,13 +257,11 @@
                   }
                 });
 
-
                 var request = {
                   origin: startLocation,
                   destination: endLocation,
                   travelMode: 'DRIVING'
                 };
-
 
                 directionsService.route(request, function (result, status) {
                   if (status === 'OK') {
@@ -996,11 +285,8 @@
   }
 
 
-
-
   function openDetailsPage(centerIndex) {
     var center = centers[centerIndex];
-
 
     var detailsPageContent =
       '<h1>Détails du centre</h1>' +
@@ -1010,13 +296,10 @@
       '<p><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
       '<img src="' + center.image + '" alt="Photo">';
 
-
     var detailsWindow = window.open('', '_blank');
     detailsWindow.document.write(detailsPageContent);
     detailsWindow.document.close();
   }
-
-
 
 
   function expandAddress(inputId) {
@@ -1035,17 +318,12 @@
 
 
 
-
-
-
   function focusStartInput() {
     // Votre fonction pour se concentrer sur l'entrée du départ ici
     var startInput = document.getElementById('start');
     startInput.focus();
   }
   document.getElementById('start').addEventListener('change', geocodeStartAddress);
-
-
 
 
 </script>
@@ -1060,7 +338,6 @@
     setDate(date);
   }
 
-
   function initializeGapiClient() {
     return gapi.client.init({
       'apiKey': "AIzaSyBLx2sI2_nIAlAfQ10FKaq8s_2Zd7EhQVw",
@@ -1070,7 +347,6 @@
     }).then(loadAppointments);
   }
 
-
   //Format date to Paris UTC
   function setDate(date) {
     let formattedDate = date.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -1078,7 +354,6 @@
     let outputDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Remap to yyyy-mm-dd
     document.getElementById('date').value = outputDate;
   }
-
 
   //On user click next or previous date
   function changeDate(change) {
@@ -1089,7 +364,6 @@
     loadAppointments();
   }
 
-
   function loadAppointments() {
     const date = document.getElementById('date').value;
     getDayAppointments(date).then(function (items) {
@@ -1097,7 +371,7 @@
       items.forEach(function (appointment) {
         appointments += `
             <li>
-                <strong>${appointment.summary}</strong>:
+                <strong>${appointment.summary}</strong>: 
                 ${appointment.start.dateTime} - ${appointment.end.dateTime}
             </li>
                             `;
@@ -1108,18 +382,14 @@
   }
 
 
-
-
   async function getDayAppointments(date) {
     clearPreviousMarkers();
-
 
     let startDate = getStartDate(date);
     let endDate = getEndDate(date);
 
-
     return gapi.client.calendar.events.list({
-      'calendarId': 'weaudition.adom@gmail.com',
+      'calendarId': 'icmproductivity@gmail.com',
       'timeMin': startDate.toISOString(),
       'timeMax': endDate.toISOString(),
       'showDeleted': false,
@@ -1136,7 +406,6 @@
     });
   }
 
-
   function clearPreviousMarkers() {
     if (window.eventMarkers) {
       window.eventMarkers.forEach(function (marker) {
@@ -1147,13 +416,11 @@
     }
   }
 
-
   function getStartDate(date) {
     let startDate = new Date(date);
     const offset = startDate.getTimezoneOffset() + 1 * 60; // Add 2 hours for French timezone (UTC+2)
     return new Date(startDate.getTime() + offset * 60 * 1000);
   }
-
 
   function getEndDate(date) {
     let endDate = new Date(date);
@@ -1163,7 +430,6 @@
     return endDate;
   }
 
-
   function updateAppointmentDateTime(appointment) {
     // Convert time to french ones
     let start = new Date(appointment.start.dateTime);
@@ -1171,7 +437,6 @@
     appointment.start.dateTime = start.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
     appointment.end.dateTime = end.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
   }
-
 
   function addAppointmentMarker(appointment) {
     var geocoder = new google.maps.Geocoder();
@@ -1190,7 +455,6 @@
     });
   }
 
-
   function addMarkerListener(marker, appointment) {
     var infoWindowContent =
       '<strong>' + appointment.summary + '</strong><br>' +
@@ -1198,11 +462,9 @@
       '<strong>End:</strong> ' + appointment.end.dateTime + '<br>' +
       '<strong>Location:</strong> ' + appointment.location;
 
-
     var infoWindow = new google.maps.InfoWindow({
       content: infoWindowContent
     });
-
 
     marker.addListener('click', function () {
       infoWindow.open(map, marker);
@@ -1210,9 +472,6 @@
   }
 
 
-
-
 </script>
-
 
 </html>
