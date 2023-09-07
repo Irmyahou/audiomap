@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 
@@ -112,6 +113,7 @@
   var map;
   var markers = [];
   var startMarker;
+  var openInfoWindow = null;
 
 
   function geocodeStartAddress() {
@@ -150,7 +152,7 @@
       name: source.Account_Name,
       address: `${source.Rue}, ${source.Code_postal} ${source.Ville}`,
       address_complement: source.Compl_ment_d_adresse,
-      audioprothetist: source.Owner.name,
+      audioprothetist: source.Audioproth_siste,
       openingHours: source.Date_pr_sence_Audio ? source.Date_pr_sence_Audio.replace(',', '').replace(/"/g, '') : "",
       image: source.URL_Image_Centre,
       phone: source.Phone,
@@ -190,25 +192,42 @@
           });
 
           var infoWindowContent =
-            '<strong>' + center.name + '</strong><br>' +
-            '<strong>Heures d\'ouverture:</strong> ' + center.openingHours.replace(',', '').replace(/"/g, '') + '<br>' +
-            '<strong>Adresse:</strong> ' + center.address + '<br>' +
-            "<strong>Complément d'adresse:</strong> " + center.address_complement + '<br>' +
-            '<strong>Audioprothésiste:</strong> ' + center.audioprothetist + '<br>' +
-            '<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
-            '<button onclick="openDetailsPage(' + index + ')">Voir détails</button>';
+            '<div style="font-family: Arial, sans-serif; background-color: #fff; padding: 10px; border: 1px solid #333; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); width: 300px;">' +
+            '<strong style="color: #ff5733; font-size: 18px;">' + center.name + '</strong><br>' +
+            '<p style="font-size: 14px;"><strong>Heures d\'ouverture:</strong> ' + center.openingHours.replace(',', '').replace(/"/g, '') + '</p>' +
+            '<p style="font-size: 14px;"><strong>Adresse:</strong> ' + center.address + '</p>' +
+            '<p style="font-size: 14px;"><strong>Téléphone:</strong> ' + center.phone + '</p>' +
+            "<p style='font-size: 14px;'><strong>Complément d'adresse:</strong> " + center.address_complement + '</p>' +
+            '<p style="font-size: 14px;"><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
+            //'<img src="' + center.image + '" alt="Photo" style="width:100px; height:100px;"><br>' +
+            '<button style="background-color: #007bff; color: #fff; padding: 5px 10px; border: none; cursor: pointer;" onclick="openDetailsPage(' + index + ')">Voir détails</button>' +
+            '</div>';
 
           var infoWindow = new google.maps.InfoWindow({
             content: infoWindowContent
           });
 
+
+          var infoWindow = new google.maps.InfoWindow({
+            content: infoWindowContent
+          });
+
+
+
           marker.addListener('click', function () {
             document.getElementById('end').value = center.address;
 
+            // Fermer l'info-bulle précédente si elle est ouverte
+            if (openInfoWindow) {
+              openInfoWindow.close();
+            }
+
             infoWindow.open(map, marker);
+            openInfoWindow = infoWindow; // Mettre à jour l'info-bulle ouverte actuellement
           });
 
           markers.push(marker);
+
         } else {
           console.log("Erreur de géocodage pour l'adresse: " + center.address + ", statut: " + status);
         }
@@ -313,18 +332,65 @@
     });
   }
 
-
   function openDetailsPage(centerIndex) {
     var center = window.centers[centerIndex];
 
     var detailsPageContent =
+      '<html>' +
+      '<head>' +
+      '<title>Détails du centre</title>' +
+      '<style>' +
+      '  body {' +
+      '    font-family: Arial, sans-serif;' +
+      '    background-color: #f4f4f4;' +
+      '    margin: 0;' +
+      '    padding: 20px;' +
+      '  }' +
+      '  .container {' +
+      '    max-width: 800px;' +
+      '    margin: 0 auto;' +
+      '    background-color: #fff;' +
+      '    padding: 20px;' +
+      '    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);' +
+      '    border-radius: 5px;' +
+      '  }' +
+      '  h1 {' +
+      '    color: #333;' +
+      '    font-size: 24px;' +
+      '  }' +
+      '  h2 {' +
+      '    color: #555;' +
+      '    font-size: 20px;' +
+      '    margin-top: 10px;' +
+      '  }' +
+      '  p {' +
+      '    color: #777;' +
+      '    font-size: 16px;' +
+      '  }' +
+      '  strong {' +
+      '    font-weight: bold;' +
+      '  }' +
+      '  img {' +
+      '    max-width: 100%;' +
+      '    height: auto;' +
+      '    border: 1px solid #ddd;' +
+      '    margin-top: 10px;' +
+      '  }' +
+      '</style>' +
+      '</head>' +
+      '<body>' +
+      '<div class="container">' +
       '<h1>Détails du centre</h1>' +
       '<h2>' + center.name + '</h2>' +
       '<p><strong>Adresse:</strong> ' + center.address + '</p>' +
       "<p><strong>Complément d'adresse:</strong> " + center.address_complement + '</p>' +
       '<p><strong>Heures d\'ouverture:</strong> ' + center.openingHours.replace(',', '').replace(/"/g, '') + '</p>' +
       '<p><strong>Audioprothésiste:</strong> ' + center.audioprothetist + '</p>' +
-      '<img src="' + center.image + '" alt="Photo">';
+      '<p><strong>Téléphone:</strong> ' + center.phone + '</p>' +
+      //'<img src="' + center.image + '" alt="Photo">' +
+      '</div>' +
+      '</body>' +
+      '</html>';
 
     var detailsWindow = window.open('', '_blank');
     detailsWindow.document.write(detailsPageContent);
@@ -498,9 +564,16 @@
     });
 
     marker.addListener('click', function () {
+      // Fermer l'info-bulle précédente si elle est ouverte
+      if (openInfoWindow) {
+        openInfoWindow.close();
+      }
+
       infoWindow.open(map, marker);
+      openInfoWindow = infoWindow; // Mettre à jour l'info-bulle ouverte actuellement
     });
   }
+
 
 
 </script>
